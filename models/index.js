@@ -38,6 +38,13 @@ db.permission.belongsToMany(db.role, {
   timestamps: false,
 });
 
-//
+//user - player relationship
+//player belongs to user
+//user has one player
+//-------------------------
+//user - club relationship
+//player - sports relationship
+//player - sports relationship
+//player - positions relationship
 
 module.exports = db;
