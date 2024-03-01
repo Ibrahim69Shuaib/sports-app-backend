@@ -5,10 +5,19 @@ module.exports = (sequelize, Sequelize) => {
       name: {
         type: Sequelize.ENUM({ values: ["player", "club", "admin"] }),
         required: true,
-        unique: true,
+        // unique: true,
+        allowNull: false,
       },
     },
-    { timestamps: false }
+    {
+      timestamps: false,
+      indexes: [
+        {
+          unique: true,
+          fields: ["name"],
+        },
+      ],
+    }
   );
 
   return Role;

@@ -5,10 +5,17 @@ module.exports = (sequelize, Sequelize) => {
       name: {
         type: Sequelize.STRING,
         required: true,
-        unique: true,
       },
     },
-    { timestamps: false }
+    {
+      timestamps: false,
+      indexes: [
+        {
+          unique: true,
+          fields: ["name"],
+        },
+      ],
+    }
   );
   // // Define many-to-many relationship with Permissions
   // // Permission.belongsToMany(Role, { through: RolePermission });

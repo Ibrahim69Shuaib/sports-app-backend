@@ -15,6 +15,12 @@ db.sequelize = sequelize;
 db.permission = require("./permission.model.js")(sequelize, Sequelize);
 db.role = require("./role.model.js")(sequelize, Sequelize);
 db.user = require("./user.model.js")(sequelize, Sequelize);
+// db.position = require("./position.model.js")(sequelize, Sequelize);
+// db.sport = require("./sport.model.js")(sequelize, Sequelize);
+// db.player = require("./player.model.js")(sequelize, Sequelize);
+// db.club = require("./club.model.js")(sequelize, Sequelize);
+
+//RelationShips =>
 
 //user - role relationship
 db.user.belongsTo(db.role, { foreignKey: "role_id" });

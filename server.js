@@ -72,7 +72,7 @@ app.get("/", (req, res) => {
 //     console.error("Error creating users:", error);
 //   }
 // })();
-
+require("./routes/auth.routes")(app);
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
