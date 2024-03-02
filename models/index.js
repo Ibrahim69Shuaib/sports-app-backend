@@ -15,6 +15,7 @@ db.sequelize = sequelize;
 db.permission = require("./permission.model.js")(sequelize, Sequelize);
 db.role = require("./role.model.js")(sequelize, Sequelize);
 db.user = require("./user.model.js")(sequelize, Sequelize);
+db.token = require("./token.model.js")(sequelize, Sequelize);
 // db.position = require("./position.model.js")(sequelize, Sequelize);
 // db.sport = require("./sport.model.js")(sequelize, Sequelize);
 // db.player = require("./player.model.js")(sequelize, Sequelize);
@@ -22,11 +23,11 @@ db.user = require("./user.model.js")(sequelize, Sequelize);
 
 //RelationShips =>
 
-//user - role relationship
+//user - role relationship (one to many)
 db.user.belongsTo(db.role, { foreignKey: "role_id" });
 db.role.hasMany(db.user, { foreignKey: "role_id" });
 
-//role - permission relationship
+//role - permission relationship (many to many)
 db.role.belongsToMany(db.permission, {
   through: "role_permission",
   foreignKey: "role_id",
@@ -37,7 +38,14 @@ db.permission.belongsToMany(db.role, {
   foreignKey: "permission_id",
   timestamps: false,
 });
+//user - token relationship (one to one)
+db.user.hasOne(db.token, {
+  foreignKey: "user_id",
+});
 
+db.token.belongsTo(db.user, {
+  foreignKey: "user_id",
+});
 //user - player relationship
 //player belongs to user
 //user has one player

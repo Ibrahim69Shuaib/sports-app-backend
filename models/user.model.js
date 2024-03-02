@@ -23,6 +23,12 @@ module.exports = (sequelize, Sequelize) => {
         required: true,
         allowNull: false,
       },
+      //isVerified is set to default false once a user signs up
+      //this will change later after email has been verified
+      isVerified: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: false,
+      },
     },
     {
       timestamps: true,
