@@ -146,7 +146,10 @@ const login = async (req, res) => {
     if (!validPassword) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
-
+    // Check if the user is verified
+    if (!user.isVerified) {
+      return res.status(401).json({ message: "Email not verified" });
+    }
     // Create JWT token upon successful login
     const token = jwt.sign(
       { id: user.id, role_id: user.role_id },
@@ -160,9 +163,58 @@ const login = async (req, res) => {
     res.status(500).json({ message: "Error logging in" });
   }
 };
+// Request User Information
+const requestResetPassword = async (req, res) => {
+  const { username, email, phone_number } = req.body;
+
+  try {
+    const user = await User.findOne({
+      where: { username, email, phone_number },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // in a more secure way i can generate a token here and save it in the db and then send it via email to verify
+
+    res
+      .status(200)
+      .json({ message: "User found. You can now reset your password" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error requesting password reset" });
+  }
+};
+
+// Reset Password Endpoint
+const resetPassword = async (req, res) => {
+  const { username, email, phone_number, newPassword } = req.body;
+
+  try {
+    const user = await User.findOne({
+      where: { username, email, phone_number },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Update user's password
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    res.status(200).json({ message: "Password reset successful" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error resetting password" });
+  }
+};
 
 module.exports = {
   register,
   login,
   verifyEmail,
+  requestResetPassword,
+  resetPassword,
 };

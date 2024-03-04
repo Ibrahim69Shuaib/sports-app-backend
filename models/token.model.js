@@ -4,7 +4,6 @@ module.exports = (sequelize, Sequelize) => {
     {
       email_token: {
         type: Sequelize.STRING,
-        allowNull: false,
       },
       device_token: {
         type: Sequelize.STRING,

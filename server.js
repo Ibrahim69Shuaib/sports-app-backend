@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 //cors package
+//helmet package
 const db = require("./models");
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -37,6 +38,7 @@ app.get("/", (req, res) => {
 });
 
 require("./routes/auth.routes")(app);
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

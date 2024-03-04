@@ -1,14 +1,11 @@
 const nodemailer = require("nodemailer");
-
+require("dotenv").config();
 // Create a transporter using SMTP transport
 const transporter = nodemailer.createTransport({
   service: "gmail",
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
   auth: {
     user: process.env.EMAIL, //email stored in .env
-    pass: process.env.PASSWORD, //password stored in.env // or app password
+    pass: process.env.APP_PASSWORD, //password stored in.env // or app password
   },
 });
 
@@ -17,7 +14,15 @@ const sendVerificationEmail = async (to, verificationToken) => {
     from: process.env.EMAIL,
     to,
     subject: "Email Verification",
-    text: `Please click the following link to verify your email: http://localhost:4000/api/auth/verify/?token=${verificationToken}`,
+    html: `
+    <html>
+      <body>
+        <p>Welcome to our application</p>
+        <p>Please click the following link to verify your email:</p>
+        <a href="http://localhost:4000/api/auth/verify/${verificationToken}">Verify Email</a>
+      </body>
+    </html>
+  `,
   };
 
   try {
