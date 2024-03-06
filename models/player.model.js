@@ -5,13 +5,11 @@ module.exports = (sequelize, Sequelize) => {
       available: {
         type: Sequelize.BOOLEAN,
       },
-    },
-    {
+
       pic: {
         type: Sequelize.STRING,
       },
-    },
-    {
+
       location: {
         type: Sequelize.STRING,
       },

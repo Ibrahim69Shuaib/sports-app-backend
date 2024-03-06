@@ -4,10 +4,13 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 const routeRoles = {
-  "/api/auth/verify/:token": [1, 2, 3], // Accessible for both Player (1) and Club (2) roles
-  "/api/test/pussycat": [1], // Accessible for both Player (1) and Club (2) roles
-  "/api/clubRoute": [2], // Accessible for only Club (2) role
-  //more routes and their associated roles as needed
+  //user routes
+  "/api/user/change-role": [3],
+  "/api/user/all": [3],
+  "/api/user/number": [3],
+  "/api/user/monthly-statistics": [3],
+  "/api/user/list": [3],
+  // other routes
 };
 
 const verifyToken = (req, res, next) => {

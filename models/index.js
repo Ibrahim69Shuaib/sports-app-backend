@@ -16,9 +16,9 @@ db.permission = require("./permission.model.js")(sequelize, Sequelize);
 db.role = require("./role.model.js")(sequelize, Sequelize);
 db.user = require("./user.model.js")(sequelize, Sequelize);
 db.token = require("./token.model.js")(sequelize, Sequelize);
-// db.position = require("./position.model.js")(sequelize, Sequelize);
-// db.sport = require("./sport.model.js")(sequelize, Sequelize);
-// db.player = require("./player.model.js")(sequelize, Sequelize);
+db.position = require("./position.model.js")(sequelize, Sequelize);
+db.sport = require("./sport.model.js")(sequelize, Sequelize);
+db.player = require("./player.model.js")(sequelize, Sequelize);
 // db.club = require("./club.model.js")(sequelize, Sequelize);
 
 //RelationShips =>
@@ -26,7 +26,7 @@ db.token = require("./token.model.js")(sequelize, Sequelize);
 //user - role relationship (one to many)
 db.user.belongsTo(db.role, { foreignKey: "role_id" });
 db.role.hasMany(db.user, { foreignKey: "role_id" });
-
+//-----------------------------------------------------
 //role - permission relationship (many to many)
 db.role.belongsToMany(db.permission, {
   through: "role_permission",
@@ -38,6 +38,7 @@ db.permission.belongsToMany(db.role, {
   foreignKey: "permission_id",
   timestamps: false,
 });
+//-----------------------------------------------------
 //user - token relationship (one to one)
 db.user.hasOne(db.token, {
   foreignKey: "user_id",
@@ -46,13 +47,20 @@ db.user.hasOne(db.token, {
 db.token.belongsTo(db.user, {
   foreignKey: "user_id",
 });
-//user - player relationship
-//player belongs to user
-//user has one player
-//-------------------------
+//-----------------------------------------------------
+//user - player relationship (one to one)
+db.user.hasOne(db.player, { foreignKey: "user_id" });
+db.player.belongsTo(db.user, { foreignKey: "user_id" });
+//-----------------------------------------------------
+//player - sports relationship
+db.sport.hasMany(db.player, { foreignKey: "sport_id" });
+db.player.belongsTo(db.sport, { foreignKey: "sport_id" });
+//-----------------------------------------------------
+//player - positions relationship
+db.position.hasMany(db.player, { foreignKey: "position_id" });
+db.player.belongsTo(db.position, { foreignKey: "position_id" });
+//-----------------------------------------------------
 //user - club relationship
 //player - sports relationship
-//player - sports relationship
-//player - positions relationship
 
 module.exports = db;
