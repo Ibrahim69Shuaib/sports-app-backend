@@ -3,19 +3,9 @@ const dotenv = require("dotenv");
 
 dotenv.config();
 
-const routeRoles = {
-  //user routes
-  "/api/user/change-role": [3],
-  "/api/user/all": [3],
-  "/api/user/number": [3],
-  "/api/user/monthly-statistics": [3],
-  "/api/user/list": [3],
-  // other routes
-};
-
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
-  const token = authHeader && authHeader.split(" ")[1]; // Extract token from Bearer format
+  const token = authHeader && authHeader.split(" ")[1];
 
   if (!token) {
     return res.status(401).json({ message: "Unauthorized" });
@@ -23,18 +13,15 @@ const verifyToken = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // Attach decoded user information to the request object
+    req.user = decoded;
+    next();
+  } catch (err) {
+    console.error(err);
 
-    const rolesRequired = routeRoles[req.path];
-
-    if (rolesRequired && !rolesRequired.includes(req.user.role_id)) {
-      return res
-        .status(403)
-        .json({ message: "Access forbidden for this role." });
+    if (err instanceof jwt.TokenExpiredError) {
+      return res.status(401).json({ message: "Token expired" });
     }
 
-    next(); // Allow request to proceed
-  } catch (err) {
     return res.status(403).json({ message: "Invalid token" });
   }
 };

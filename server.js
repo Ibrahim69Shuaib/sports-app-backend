@@ -5,6 +5,8 @@ const express = require("express");
 const db = require("./models");
 const app = express();
 const PORT = process.env.PORT || 3000;
+const checkRolesMiddleware = require("./middleware/check_roles.middleware");
+const { verifyToken } = require("./middleware/auth.middleware");
 
 async function initialize() {
   console.log(`Checking database connection...`);
@@ -39,6 +41,8 @@ app.get("/", (req, res) => {
 
 require("./routes/auth.routes")(app);
 require("./routes/user.routes")(app);
+require("./routes/role.routes")(app);
+require("./routes/permission.routes")(app);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
