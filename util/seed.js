@@ -1,5 +1,8 @@
 //this is a seeding script for adding rows to roles , permissions and role_permissions tables and bulk create users.
 //add here any tables that needs to be filled with static rows.
+
+//add seeding for  sports table , positions table
+
 const db = require("../models");
 const Role = db.role;
 const Permission = db.permission;
