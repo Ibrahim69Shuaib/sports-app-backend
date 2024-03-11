@@ -46,6 +46,20 @@ module.exports = (app) => {
     checkRolesMiddleware([3]),
     sport.getSportByName
   );
+  // get sport by name
+  router.get(
+    "/all-positions",
+    verifyToken,
+    checkRolesMiddleware([3]),
+    sport.getSportsWithPositions
+  );
+  // get sport by name
+  router.get(
+    "/positions/:sportId",
+    verifyToken,
+    checkRolesMiddleware([3]),
+    sport.getPositionsForSport
+  );
 
   app.use("/api/sport", router);
 };

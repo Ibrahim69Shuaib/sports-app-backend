@@ -45,6 +45,7 @@ require("./routes/role.routes")(app);
 require("./routes/permission.routes")(app);
 require("./routes/player.routes")(app);
 require("./routes/sport.routes")(app);
+require("./routes/position.routes")(app);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

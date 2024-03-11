@@ -4,6 +4,7 @@
 const db = require("../models");
 
 const Sport = db.sport;
+const Position = db.position;
 // add new sport
 const createSport = async (req, res) => {
   try {
@@ -72,7 +73,7 @@ const deleteSport = async (req, res) => {
 
     await sport.destroy();
 
-    res.status(204).send();
+    res.status(204).json({ message: "Sport deleted successfully" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal Server Error" });
@@ -99,6 +100,35 @@ const editSport = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+const getSportsWithPositions = async (req, res) => {
+  try {
+    const sports = await Sport.findAll({
+      include: [{ model: Position, attributes: ["id", "name", "key"] }],
+    });
+
+    res.status(200).json(sports);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+const getPositionsForSport = async (req, res) => {
+  try {
+    const sportId = req.params.sportId;
+    const sport = await Sport.findByPk(sportId, {
+      include: [{ model: Position, attributes: ["id", "name", "key"] }],
+    });
+
+    if (!sport) {
+      return res.status(404).json({ message: "Sport not found" });
+    }
+
+    res.status(200).json(sport.positions);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
 module.exports = {
   createSport,
@@ -107,4 +137,6 @@ module.exports = {
   getSportByName,
   editSport,
   deleteSport,
+  getSportsWithPositions,
+  getPositionsForSport,
 };

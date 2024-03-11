@@ -56,11 +56,21 @@ db.player.belongsTo(db.user, { foreignKey: "user_id" });
 db.sport.hasMany(db.player, { foreignKey: "sport_id" });
 db.player.belongsTo(db.sport, { foreignKey: "sport_id" });
 //-----------------------------------------------------
-//player - positions relationship
+//player - positions relationship (one to many)
 db.position.hasMany(db.player, { foreignKey: "position_id" });
 db.player.belongsTo(db.position, { foreignKey: "position_id" });
 //-----------------------------------------------------
+//sport - position relationship (many to many)
+db.sport.belongsToMany(db.position, {
+  through: "sport_position",
+  timestamps: false,
+});
+db.position.belongsToMany(db.sport, {
+  through: "sport_position",
+  timestamps: false,
+});
+//-----------------------------------------------------
 //user - club relationship
-//player - sports relationship
 
+//-----------------------------------------------------
 module.exports = db;

@@ -1,51 +1,52 @@
 module.exports = (app) => {
-  const sport = require("../controllers/sport.controller.js");
+  const position = require("../controllers/position.controller.js");
   var router = require("express").Router();
   const { verifyToken } = require("../middleware/auth.middleware");
   const checkRolesMiddleware = require("../middleware/check_roles.middleware.js");
 
-  // add new sport
+  // add new position
   router.post(
     "/add",
     verifyToken,
     checkRolesMiddleware([3]),
-    sport.createSport
+    position.createPosition
   );
-  // edit sport
+  // edit position {key , name}
   router.put(
     "/edit/:id",
     verifyToken,
     checkRolesMiddleware([3]),
-    sport.editSport
+    position.editPosition
   );
-  // delete sport
+  // delete position
   router.delete(
     "/delete/:id",
     verifyToken,
     checkRolesMiddleware([3]),
-    sport.deleteSport
+    position.deletePosition
   );
-  // get all sports
-  router.get(
-    "/all",
+  // get all positions
+  router.get("/all", verifyToken, position.getAllPositions);
+  // get position by id
+  router.get("/by-id/:id", verifyToken, position.getPositionById);
+  // get position by name
+  router.get("/by-name/:name", verifyToken, position.getPositionByName);
+  // get position by key
+  router.get("/by-key/:key", verifyToken, position.getPositionByKey);
+  // assign position to sport
+  router.post(
+    "/assign",
     verifyToken,
     checkRolesMiddleware([3]),
-    sport.getAllSports
+    position.assignPositionToSport
   );
-  // get sport by id
-  router.get(
-    "/by-id/:id",
+  // remove position from sport
+  router.post(
+    "/remove",
     verifyToken,
     checkRolesMiddleware([3]),
-    sport.getSportById
-  );
-  // get sport by name
-  router.get(
-    "/by-name/:name",
-    verifyToken,
-    checkRolesMiddleware([3]),
-    sport.getSportByName
+    position.removePositionFromSport
   );
 
-  app.use("/api/sport", router);
+  app.use("/api/position", router);
 };
