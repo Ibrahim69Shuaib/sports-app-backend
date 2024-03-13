@@ -19,6 +19,7 @@ db.token = require("./token.model.js")(sequelize, Sequelize);
 db.position = require("./position.model.js")(sequelize, Sequelize);
 db.sport = require("./sport.model.js")(sequelize, Sequelize);
 db.player = require("./player.model.js")(sequelize, Sequelize);
+db.follower = require("./follower.model.js")(sequelize, Sequelize);
 // db.club = require("./club.model.js")(sequelize, Sequelize);
 
 //RelationShips =>
@@ -68,6 +69,14 @@ db.sport.belongsToMany(db.position, {
 db.position.belongsToMany(db.sport, {
   through: "sport_position",
   timestamps: false,
+});
+//-----------------------------------------------------
+// player - follower relationship (many to many) the follow model act as join table between the player model and itself
+db.player.belongsToMany(db.player, {
+  through: db.follower,
+  as: "followers",
+  foreignKey: "player_id",
+  otherKey: "follower_id",
 });
 //-----------------------------------------------------
 //user - club relationship

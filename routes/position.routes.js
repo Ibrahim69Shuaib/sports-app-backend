@@ -25,14 +25,6 @@ module.exports = (app) => {
     checkRolesMiddleware([3]),
     position.deletePosition
   );
-  // get all positions
-  router.get("/all", verifyToken, position.getAllPositions);
-  // get position by id
-  router.get("/by-id/:id", verifyToken, position.getPositionById);
-  // get position by name
-  router.get("/by-name/:name", verifyToken, position.getPositionByName);
-  // get position by key
-  router.get("/by-key/:key", verifyToken, position.getPositionByKey);
   // assign position to sport
   router.post(
     "/assign",
@@ -47,6 +39,14 @@ module.exports = (app) => {
     checkRolesMiddleware([3]),
     position.removePositionFromSport
   );
+  // get all positions
+  router.get("/all", verifyToken, position.getAllPositions);
+  // get position by id
+  router.get("/by-id/:id", verifyToken, position.getPositionById);
+  // get position by name
+  router.get("/by-name/:name", verifyToken, position.getPositionByName);
+  // get position by key
+  router.get("/by-key/:key", verifyToken, position.getPositionByKey);
 
   app.use("/api/position", router);
 };

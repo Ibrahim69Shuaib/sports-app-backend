@@ -20,6 +20,7 @@ module.exports = (sequelize, Sequelize) => {
 
       isBlocked: {
         type: Sequelize.BOOLEAN,
+        defaultValue: false,
       },
     },
 
