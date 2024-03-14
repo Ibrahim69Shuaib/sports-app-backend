@@ -78,6 +78,7 @@ db.player.belongsToMany(db.player, {
   foreignKey: "player_id",
   otherKey: "follower_id",
 });
+db.follower.belongsTo(db.player, { foreignKey: "player_id", as: "player" }); // this line is sus
 //-----------------------------------------------------
 //user - club relationship
 
