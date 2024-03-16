@@ -3,7 +3,6 @@
 // team player
 // fav team
 
-// check if frontend can easily create a new player profile and assign to it a sport and position.
 const db = require("../models");
 const Player = db.player;
 const User = db.user;

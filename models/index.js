@@ -20,7 +20,11 @@ db.position = require("./position.model.js")(sequelize, Sequelize);
 db.sport = require("./sport.model.js")(sequelize, Sequelize);
 db.player = require("./player.model.js")(sequelize, Sequelize);
 db.follower = require("./follower.model.js")(sequelize, Sequelize);
-// db.club = require("./club.model.js")(sequelize, Sequelize);
+db.club = require("./club.model.js")(sequelize, Sequelize);
+//db.notification= require("./notification..model.js")(sequelize, Sequelize);
+//db.favorite_club= require("./favorite_club.model.js")(sequelize,Sequelize);
+//db.plan= require ("./plan.model.js")(sequelize, Sequelize);
+//db.subscription= require ("./subscription.model.js")(sequelize,Sequelize);
 
 //RelationShips =>
 
@@ -48,6 +52,10 @@ db.user.hasOne(db.token, {
 db.token.belongsTo(db.user, {
   foreignKey: "user_id",
 });
+//-----------------------------------------------------
+// user - notification relationship (one to many)
+// db.user.hasMany(db.notification,{foreignKey:"user_id"})
+// db.notification.belongsTo(db.user,{foreignKey:"user_id"})
 //-----------------------------------------------------
 //user - player relationship (one to one)
 db.user.hasOne(db.player, { foreignKey: "user_id" });
@@ -80,7 +88,36 @@ db.player.belongsToMany(db.player, {
 });
 db.follower.belongsTo(db.player, { foreignKey: "player_id", as: "player" }); // this line is sus
 //-----------------------------------------------------
-//user - club relationship
+//player - favorite_club relationship (one to many)
+// db.player.hasMany(db.favorite_club, { foreignKey: "player_id"});
+// db.favorite_club.belongsTo(db.player, { foreignKey: "player_id"});
+//------------------------------------------------------
+// club - favorite_club relationship (one to many)
+// db.club.hasMany(db.favorite_club,{foreignKey: "club_id"});
+// db.favorite_club.belongsTo(db.club, { foreignKey: "club_id"});
 
 //-----------------------------------------------------
+//user - club relationship
+db.user.hasOne(db.club, { foreignKey: "user_id" });
+db.club.belongsTo(db.user, { foreignKey: "user_id" });
+//-----------------------------------------------------
+//club - field relationship (one to many)
+// db.club.hasMany(db.field, { foreignKey: "club_id" });
+// db.field.belongsTo(db.club, { foreignKey: "club_id" });
+//-----------------------------------------------------
+// field - duration relationship (one to many)
+//----------------------------------------------------
+// duration- reservation relationship (one to many)
+
+//----------------------------------------------------
+// club - utility relationship (many to many) through club_utility
+
+//----------------------------------------------------
+
+// club - subscription relationship (one to many) one club many subscriptions
+
+//----------------------------------------------------
+
+// subscription - plan relationship (one to many) one plan many subscriptions
+
 module.exports = db;
