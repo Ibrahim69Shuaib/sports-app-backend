@@ -2,6 +2,8 @@
 
 const db = require("../models");
 const Club = db.club;
+const { Op } = require("sequelize");
+const Sequelize = require("sequelize");
 
 const createClub = async (req, res) => {
   try {
@@ -25,13 +27,12 @@ const createClub = async (req, res) => {
       description,
       location,
       pic,
-      isBlocked,
       user_id: userId,
       lat,
       lon,
     });
 
-    res.status(201).json("Club created successfully", club);
+    res.status(201).json(club);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal Server Error" });
@@ -44,7 +45,7 @@ const updateClub = async (req, res) => {
     const userId = req.user.id; // Assuming user information is available in req.user
 
     // Find the club
-    const club = await Club.findOne({ where: { userId } });
+    const club = await Club.findOne({ where: { user_id: userId } });
 
     if (!club) {
       return res.status(404).json({ message: "Club not found" });
@@ -71,7 +72,7 @@ const getClubForCurrentUser = async (req, res) => {
     const userId = req.user.id; // Assuming user information is available in req.user
 
     // Find the club for the current user
-    const club = await Club.findOne({ where: { userId } });
+    const club = await Club.findOne({ where: { user_id: userId } });
 
     if (!club) {
       return res.status(404).json({ message: "Club not found" });
@@ -87,7 +88,7 @@ const getClubForCurrentUser = async (req, res) => {
 // Get club by ID
 const getClubById = async (req, res) => {
   try {
-    const clubId = req.params.id;
+    const clubId = req.params.clubId;
 
     // Find the club by ID
     const club = await Club.findByPk(clubId);
@@ -105,7 +106,7 @@ const getClubById = async (req, res) => {
 // Get club by name
 const getClubByName = async (req, res) => {
   try {
-    const clubName = req.params.name;
+    const clubName = req.params.clubName;
 
     // Find the club by name
     const club = await Club.findOne({ where: { name: clubName } });
@@ -166,7 +167,7 @@ const getClubByUsername = async (req, res) => {
     }
 
     // Find the club associated with the user
-    const club = await Club.findOne({ where: { userId: user.id } });
+    const club = await Club.findOne({ where: { user_id: user.id } });
 
     if (!club) {
       return res.status(404).json({ message: "Club not found for this user" });
@@ -175,6 +176,27 @@ const getClubByUsername = async (req, res) => {
     res.status(200).json(club);
   } catch (error) {
     console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+const searchClub = async (req, res) => {
+  const name = req.query.name; // Get the search query from the URL parameters
+  if (!name) {
+    return res.status(400).json({ message: "Name parameter is required" });
+  }
+  try {
+    const clubs = await Club.findAll({
+      where: Sequelize.where(
+        Sequelize.fn("LOWER", Sequelize.col("club.name")),
+        {
+          [Op.like]: `%${name.toLowerCase()}%`,
+        }
+      ),
+    });
+
+    res.status(200).json(clubs);
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -188,4 +210,5 @@ module.exports = {
   getAllClubs,
   getAllClubsWithPagination,
   getClubByUsername,
+  searchClub,
 };

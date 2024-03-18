@@ -13,7 +13,7 @@ module.exports = (app) => {
   );
   // Update club information
   router.put(
-    "/update/:id",
+    "/update",
     verifyToken,
     checkRolesMiddleware([2]),
     club.updateClub
@@ -32,9 +32,11 @@ module.exports = (app) => {
   // Get players by user name
   router.get("/by-username/:username", verifyToken, club.getClubByUsername);
   // Get all players
-  router.get("/all", verifyToken, club.getAllClubs); // needs some roles but idk what
+  router.get("/all", verifyToken, club.getAllClubs);
   // Get all player wit pagination
   router.get("/list", verifyToken, club.getAllClubsWithPagination);
+  // Search for club
+  router.get("/search", verifyToken, club.searchClub);
 
   app.use("/api/club", router);
 };

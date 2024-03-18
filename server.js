@@ -37,14 +37,16 @@ app.get("/", (req, res) => {
   res.send("Welcome to the Sports App API");
 });
 // APIs routes
-require("./routes/auth.routes")(app);
-require("./routes/user.routes")(app);
-require("./routes/role.routes")(app);
-require("./routes/permission.routes")(app);
-require("./routes/player.routes")(app);
-require("./routes/sport.routes")(app);
-require("./routes/position.routes")(app);
-require("./routes/follower.routes")(app);
+require("./routes/auth.routes")(app); // Auth
+require("./routes/user.routes")(app); // User
+require("./routes/role.routes")(app); // Role
+require("./routes/permission.routes")(app); //Permission
+require("./routes/player.routes")(app); //Player
+require("./routes/sport.routes")(app); // Sport
+require("./routes/position.routes")(app); // Position
+require("./routes/follower.routes")(app); //Follower
+require("./routes/club.routes")(app); // Club
+require("./routes/favorite_club.routes")(app); // Favorite-Club
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

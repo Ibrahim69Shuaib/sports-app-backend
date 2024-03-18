@@ -22,7 +22,7 @@ db.player = require("./player.model.js")(sequelize, Sequelize);
 db.follower = require("./follower.model.js")(sequelize, Sequelize);
 db.club = require("./club.model.js")(sequelize, Sequelize);
 //db.notification= require("./notification..model.js")(sequelize, Sequelize);
-//db.favorite_club= require("./favorite_club.model.js")(sequelize,Sequelize);
+db.favorite_club = require("./favorite_club.model.js")(sequelize, Sequelize);
 //db.plan= require ("./plan.model.js")(sequelize, Sequelize);
 //db.subscription= require ("./subscription.model.js")(sequelize,Sequelize);
 
@@ -89,12 +89,12 @@ db.player.belongsToMany(db.player, {
 db.follower.belongsTo(db.player, { foreignKey: "player_id", as: "player" }); // this line is sus
 //-----------------------------------------------------
 //player - favorite_club relationship (one to many)
-// db.player.hasMany(db.favorite_club, { foreignKey: "player_id"});
-// db.favorite_club.belongsTo(db.player, { foreignKey: "player_id"});
-//------------------------------------------------------
+db.player.hasMany(db.favorite_club, { foreignKey: "player_id" });
+db.favorite_club.belongsTo(db.player, { foreignKey: "player_id" });
+//-----------------------------------------------------
 // club - favorite_club relationship (one to many)
-// db.club.hasMany(db.favorite_club,{foreignKey: "club_id"});
-// db.favorite_club.belongsTo(db.club, { foreignKey: "club_id"});
+db.club.hasMany(db.favorite_club, { foreignKey: "club_id" });
+db.favorite_club.belongsTo(db.club, { foreignKey: "club_id" });
 
 //-----------------------------------------------------
 //user - club relationship
@@ -106,17 +106,17 @@ db.club.belongsTo(db.user, { foreignKey: "user_id" });
 // db.field.belongsTo(db.club, { foreignKey: "club_id" });
 //-----------------------------------------------------
 // field - duration relationship (one to many)
-//----------------------------------------------------
+//-----------------------------------------------------
 // duration- reservation relationship (one to many)
 
-//----------------------------------------------------
+//-----------------------------------------------------
 // club - utility relationship (many to many) through club_utility
 
-//----------------------------------------------------
+//-----------------------------------------------------
 
 // club - subscription relationship (one to many) one club many subscriptions
 
-//----------------------------------------------------
+//-----------------------------------------------------
 
 // subscription - plan relationship (one to many) one plan many subscriptions
 
