@@ -4,6 +4,8 @@ module.exports = (sequelize, Sequelize) => {
     {
       name: {
         type: Sequelize.STRING,
+        required: true,
+        allowNull: false,
       },
 
       description: {
@@ -42,6 +44,12 @@ module.exports = (sequelize, Sequelize) => {
 
     {
       timestamps: false,
+      indexes: [
+        {
+          unique: true,
+          fields: ["name"],
+        },
+      ],
     }
   );
   // Define one-to-one relationship with User

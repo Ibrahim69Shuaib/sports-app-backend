@@ -5,6 +5,7 @@ const express = require("express");
 const db = require("./models");
 const app = express();
 const PORT = process.env.PORT || 3000;
+require("./services/maintenanceScheduler");
 
 async function initialize() {
   console.log(`Checking database connection...`);
@@ -46,7 +47,7 @@ require("./routes/sport.routes")(app); // Sport
 require("./routes/position.routes")(app); // Position
 require("./routes/follower.routes")(app); //Follower
 require("./routes/club.routes")(app); // Club
-require("./routes/favorite_club.routes")(app); // Favorite-Club
+require("./routes/field.routes")(app); // Field
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

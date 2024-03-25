@@ -21,6 +21,8 @@ db.sport = require("./sport.model.js")(sequelize, Sequelize);
 db.player = require("./player.model.js")(sequelize, Sequelize);
 db.follower = require("./follower.model.js")(sequelize, Sequelize);
 db.club = require("./club.model.js")(sequelize, Sequelize);
+db.field = require("./field.model.js")(sequelize, Sequelize);
+db.duration = require("./duration.model.js")(sequelize, Sequelize);
 //db.notification= require("./notification..model.js")(sequelize, Sequelize);
 db.favorite_club = require("./favorite_club.model.js")(sequelize, Sequelize);
 //db.plan= require ("./plan.model.js")(sequelize, Sequelize);
@@ -102,10 +104,16 @@ db.user.hasOne(db.club, { foreignKey: "user_id" });
 db.club.belongsTo(db.user, { foreignKey: "user_id" });
 //-----------------------------------------------------
 //club - field relationship (one to many)
-// db.club.hasMany(db.field, { foreignKey: "club_id" });
-// db.field.belongsTo(db.club, { foreignKey: "club_id" });
+db.club.hasMany(db.field, { foreignKey: "club_id" });
+db.field.belongsTo(db.club, { foreignKey: "club_id" });
+//-----------------------------------------------------
+//field - sport relationship (one to many)
+db.sport.hasMany(db.field, { foreignKey: "sport_id" });
+db.field.belongsTo(db.sport, { foreignKey: "sport_id" });
 //-----------------------------------------------------
 // field - duration relationship (one to many)
+db.field.hasMany(db.duration, { foreignKey: "field_id" });
+db.duration.belongsTo(db.field, { foreignKey: "field_id" });
 //-----------------------------------------------------
 // duration- reservation relationship (one to many)
 
