@@ -48,6 +48,7 @@ require("./routes/position.routes")(app); // Position
 require("./routes/follower.routes")(app); //Follower
 require("./routes/club.routes")(app); // Club
 require("./routes/field.routes")(app); // Field
+require("./routes/duration.routes")(app); // Duration
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

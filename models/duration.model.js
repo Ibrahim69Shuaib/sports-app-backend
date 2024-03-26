@@ -3,11 +3,7 @@ module.exports = (sequelize, Sequelize) => {
     "duration",
     {
       time: {
-        type: Sequelize.DATE,
-      },
-      is_available: {
-        type: Sequelize.BOOLEAN,
-        defaultValue: true,
+        type: Sequelize.TIME,
       },
     },
     {
