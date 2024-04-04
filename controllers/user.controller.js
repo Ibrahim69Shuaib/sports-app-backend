@@ -2,7 +2,7 @@ const db = require("../models");
 const User = db.user;
 const bcrypt = require("bcryptjs");
 const Sequelize = require("sequelize");
-
+// get all players even the soft deleted ones
 const editUserDetails = async (req, res) => {
   const userId = req.user.id;
 

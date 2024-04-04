@@ -3,8 +3,7 @@ const Field = db.field;
 const Sport = db.sport;
 const Club = db.club;
 const { Op } = require("sequelize");
-
-//add sport id to all required functions
+//TODO: need to modify maintenance logic to include reservations and refunds
 // Create a new field
 const createField = async (req, res) => {
   try {

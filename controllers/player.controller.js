@@ -1,4 +1,3 @@
-// friends
 // teams
 // team player
 // fav team

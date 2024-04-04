@@ -1,5 +1,4 @@
 const db = require("../models");
-
 const Position = db.position;
 const Sport = db.sport;
 

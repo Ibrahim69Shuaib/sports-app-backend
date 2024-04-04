@@ -1,19 +1,45 @@
 const db = require("../models");
+const moment = require("moment");
 const Duration = db.duration;
 const Field = db.field;
-
+const Club = db.club;
+//TODO: add time validation to be between the club working hours
 // Create a new duration for a field
 const createDuration = async (req, res) => {
   try {
     const { field_id, time } = req.body;
+
+    // Find the field
     const field = await Field.findByPk(field_id);
     if (!field) {
       return res.status(404).json({ message: "Field not found" });
     }
 
-    const duration = await Duration.create({ field_id, time });
+    // Ensure time is in HH:mm format
+    const formattedTime = moment(time, "HH:mm");
+    if (!formattedTime.isValid()) {
+      return res.status(400).json({ message: "Invalid time format" });
+    }
+
+    // Check for duplicate times
+    const existingDuration = await Duration.findOne({
+      where: { field_id: field_id, time: formattedTime.format("HH:mm") },
+    });
+
+    if (existingDuration) {
+      return res.status(400).json({ message: "Duration already exists" });
+    }
+
+    const duration = await Duration.create({
+      field_id,
+      time: formattedTime.format("HH:mm"),
+    });
     res.status(201).json(duration);
   } catch (error) {
+    // Check if the error is due to uniqueness constraint violation
+    if (error.name === "SequelizeUniqueConstraintError") {
+      return res.status(400).json({ message: "Duration already exists" });
+    }
     console.error(error);
     res.status(500).json({ message: "Internal Server Error" });
   }

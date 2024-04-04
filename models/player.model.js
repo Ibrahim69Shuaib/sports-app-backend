@@ -16,6 +16,12 @@ module.exports = (sequelize, Sequelize) => {
     },
     {
       timestamps: false,
+      indexes: [
+        {
+          unique: true,
+          fields: ["user_id"],
+        },
+      ],
     }
   );
   // Define one-to-one relationship with User

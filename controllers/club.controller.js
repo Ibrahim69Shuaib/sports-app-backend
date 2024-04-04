@@ -1,4 +1,4 @@
-// functionality to block club by admin + handle what happens after blocking (restrict access to  some routes)
+//TODO: functionality to block club by admin + handle what happens after blocking (restrict access to  some routes)
 
 const db = require("../models");
 const Club = db.club;
@@ -7,7 +7,16 @@ const Sequelize = require("sequelize");
 
 const createClub = async (req, res) => {
   try {
-    const { name, description, location, pic, lat, lon } = req.body;
+    const {
+      name,
+      description,
+      location,
+      pic,
+      lat,
+      lon,
+      workingHoursStart,
+      workingHoursEnd,
+    } = req.body;
 
     // Assuming user information is available in req.user
     const userId = req.user.id;
@@ -21,6 +30,11 @@ const createClub = async (req, res) => {
         .json({ message: "Club already exists for this user" });
     }
 
+    // Check if working hours are provided
+    if (!workingHoursStart || !workingHoursEnd) {
+      return res.status(400).json({ message: "Working hours are required" });
+    }
+
     // Create a new club
     const club = await Club.create({
       name,
@@ -30,6 +44,8 @@ const createClub = async (req, res) => {
       user_id: userId,
       lat,
       lon,
+      workingHoursStart,
+      workingHoursEnd,
     });
 
     res.status(201).json(club);
@@ -38,10 +54,20 @@ const createClub = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 // Update club information
 const updateClub = async (req, res) => {
   try {
-    const { name, description, location, pic, latitude, longitude } = req.body;
+    const {
+      name,
+      description,
+      location,
+      pic,
+      latitude,
+      longitude,
+      workingHoursStart,
+      workingHoursEnd,
+    } = req.body;
     const userId = req.user.id; // Assuming user information is available in req.user
 
     // Find the club
@@ -58,7 +84,18 @@ const updateClub = async (req, res) => {
     club.pic = pic;
     club.latitude = latitude;
     club.longitude = longitude;
-    await club.save();
+    club.workingHoursStart = workingHoursStart;
+    club.workingHoursEnd = workingHoursEnd;
+    await club.update({
+      name,
+      description,
+      location,
+      pic,
+      latitude,
+      longitude,
+      workingHoursStart,
+      workingHoursEnd,
+    });
 
     res.status(200).json({ message: "Club updated successfully", club });
   } catch (error) {
@@ -66,6 +103,7 @@ const updateClub = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 // Get club information for the current logged-in user
 const getClubForCurrentUser = async (req, res) => {
   try {

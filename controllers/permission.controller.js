@@ -1,5 +1,5 @@
-const db = require("../models"); // Import your Sequelize models
-const Permission = db.permission; // Adjust the model name accordingly
+const db = require("../models");
+const Permission = db.permission;
 
 const getAllPermissions = async (req, res) => {
   try {

@@ -1,3 +1,5 @@
+//TODO: add working hours for the club
+//TODO: club refund policy
 module.exports = (sequelize, Sequelize) => {
   const Club = sequelize.define(
     "club",
@@ -40,6 +42,14 @@ module.exports = (sequelize, Sequelize) => {
           max: 180,
         },
       },
+      workingHoursStart: {
+        type: Sequelize.TIME,
+        allowNull: false,
+      },
+      workingHoursEnd: {
+        type: Sequelize.TIME,
+        allowNull: false,
+      },
     },
 
     {
@@ -47,7 +57,7 @@ module.exports = (sequelize, Sequelize) => {
       indexes: [
         {
           unique: true,
-          fields: ["name"],
+          fields: ["name", "user_id"],
         },
       ],
     }

@@ -1,6 +1,3 @@
-// get sport by name
-// delete sport
-// edit sport
 const db = require("../models");
 
 const Sport = db.sport;
