@@ -1,13 +1,13 @@
 //create team // handle already in team => done
-//handle team max size when someone joins a team
+//handle team max size when someone joins a team => done in response of the request
 //leave team // handle if captain leaves a team => done
 //promote team member to team captain => done
 //edit team information (team captain) => done
 //kick player (team captain) => done
 // handle when all team members leave the team = > soft delete the team => done
 // other functionalities require requests table
-// request to join team
-// captain sends invite request
+// request to join team => done
+// captain sends invite request => done
 //add sport_id to functions => done
 // delete team and handle that team member will have their team id set to null => done
 const { Op } = require("sequelize");

@@ -50,6 +50,7 @@ require("./routes/club.routes")(app); // Club
 require("./routes/field.routes")(app); // Field
 require("./routes/duration.routes")(app); // Duration
 require("./routes/team.routes")(app); // Team
+require("./routes/request.routes")(app); // Request
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

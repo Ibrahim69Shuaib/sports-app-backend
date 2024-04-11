@@ -24,6 +24,7 @@ db.club = require("./club.model.js")(sequelize, Sequelize);
 db.field = require("./field.model.js")(sequelize, Sequelize);
 db.duration = require("./duration.model.js")(sequelize, Sequelize);
 db.team = require("./team.model.js")(sequelize, Sequelize);
+db.request = require("./request.model.js")(sequelize, Sequelize);
 //db.notification= require("./notification..model.js")(sequelize, Sequelize);
 db.favorite_club = require("./favorite_club.model.js")(sequelize, Sequelize);
 //db.plan= require ("./plan.model.js")(sequelize, Sequelize);
@@ -124,8 +125,26 @@ db.player.hasOne(db.team, { foreignKey: "captain_id", as: "captainTeam" }); // p
 db.team.belongsTo(db.sport, { foreignKey: "sport_id" });
 db.sport.hasMany(db.team, { foreignKey: "sport_id" });
 //-----------------------------------------------------
-// duration- reservation relationship (one to many)
-
+//request - user relationship (one to many)
+db.user.hasMany(db.request, { foreignKey: "sender_id", as: "sentRequests" });
+db.user.hasMany(db.request, {
+  foreignKey: "receiver_id",
+  as: "receivedRequests",
+});
+db.request.belongsTo(db.user, { foreignKey: "sender_id", as: "sender" });
+db.request.belongsTo(db.user, { foreignKey: "receiver_id", as: "receiver" });
+//-----------------------------------------------------
+//request - team relationship (one to many)
+db.team.hasMany(db.request, { foreignKey: "team_id", as: "sentRequests" });
+db.request.belongsTo(db.team, { foreignKey: "team_id", as: "team" });
+//-----------------------------------------------------
+//request - post relationship (one to many)
+// db.post.hasMany(db.request, { foreignKey: 'postId', as: 'sentRequests' });
+// db.request.belongsTo(models.post, { foreignKey: 'postId', as: 'post' });
+//-----------------------------------------------------
+//request - post relationship (one to many)
+// db.tournament.hasMany(db.request, { foreignKey: 'tournamentId', as: 'sentRequests' });
+// db.request.belongsTo(db.tournament, { foreignKey: 'tournamentId', as: 'tournament' });
 //-----------------------------------------------------
 // club - utility relationship (many to many) through club_utility
 
