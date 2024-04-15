@@ -25,8 +25,10 @@ db.field = require("./field.model.js")(sequelize, Sequelize);
 db.duration = require("./duration.model.js")(sequelize, Sequelize);
 db.team = require("./team.model.js")(sequelize, Sequelize);
 db.request = require("./request.model.js")(sequelize, Sequelize);
-//db.notification= require("./notification..model.js")(sequelize, Sequelize);
 db.favorite_club = require("./favorite_club.model.js")(sequelize, Sequelize);
+db.wallet = require("./wallet.model.js")(sequelize, Sequelize);
+db.transaction = require("./transaction.model.js")(sequelize, Sequelize);
+//db.notification= require("./notification..model.js")(sequelize, Sequelize);
 //db.plan= require ("./plan.model.js")(sequelize, Sequelize);
 //db.subscription= require ("./subscription.model.js")(sequelize,Sequelize);
 
@@ -60,6 +62,14 @@ db.token.belongsTo(db.user, {
 // user - notification relationship (one to many)
 // db.user.hasMany(db.notification,{foreignKey:"user_id"})
 // db.notification.belongsTo(db.user,{foreignKey:"user_id"})
+//-----------------------------------------------------
+// user - wallet relationship (one to one)
+db.user.hasOne(db.wallet, { foreignKey: "user_id" });
+db.wallet.belongsTo(db.user, { foreignKey: "user_id" });
+//-----------------------------------------------------
+// user - transaction relationship (one to many)
+db.user.hasMany(db.transaction, { foreignKey: "user_id" });
+db.transaction.belongsTo(db.user, { foreignKey: "user_id" });
 //-----------------------------------------------------
 //user - player relationship (one to one)
 db.user.hasOne(db.player, { foreignKey: "user_id" });
@@ -142,9 +152,9 @@ db.request.belongsTo(db.team, { foreignKey: "team_id", as: "team" });
 // db.post.hasMany(db.request, { foreignKey: 'postId', as: 'sentRequests' });
 // db.request.belongsTo(models.post, { foreignKey: 'postId', as: 'post' });
 //-----------------------------------------------------
-//request - post relationship (one to many)
-// db.tournament.hasMany(db.request, { foreignKey: 'tournamentId', as: 'sentRequests' });
-// db.request.belongsTo(db.tournament, { foreignKey: 'tournamentId', as: 'tournament' });
+//request - tournament relationship (one to many)
+// db.tournament.hasMany(db.transaction, { foreignKey: 'tournament_id' });
+// db.transaction.belongsTo(db.tournament, { foreignKey: 'tournament_id' });
 //-----------------------------------------------------
 // club - utility relationship (many to many) through club_utility
 

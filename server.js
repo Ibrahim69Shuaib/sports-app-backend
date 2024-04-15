@@ -47,10 +47,14 @@ require("./routes/sport.routes")(app); // Sport
 require("./routes/position.routes")(app); // Position
 require("./routes/follower.routes")(app); //Follower
 require("./routes/club.routes")(app); // Club
+require("./routes/favorite_club.routes")(app); // Favorite-Club TODO: NEEDS TESTING
 require("./routes/field.routes")(app); // Field
 require("./routes/duration.routes")(app); // Duration
 require("./routes/team.routes")(app); // Team
 require("./routes/request.routes")(app); // Request
+require("./routes/stripe.routes")(app); // Stripe
+require("./routes/wallet.routes")(app); // Wallet
+require("./routes/transaction.routes")(app); // Transaction
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

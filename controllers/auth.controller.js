@@ -1,6 +1,7 @@
 const db = require("../models");
 const User = db.user;
 const Token = db.token;
+const Wallet = db.wallet;
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
@@ -24,7 +25,23 @@ const generateVerificationToken = async () => {
     });
   });
 };
+const createUserWallet = async (userId, roleId) => {
+  try {
+    // Create a wallet for the user
+    const wallet = await Wallet.create({ user_id: userId });
 
+    // If the user has a club role, set the frozen balance
+    if (roleId == 2) {
+      await wallet.update({ frozenBalance: 0.0 });
+    }
+
+    return wallet;
+  } catch (error) {
+    throw new Error(
+      `Error creating wallet for user ${userId}: ${error.message}`
+    );
+  }
+};
 // Register controller
 const register = async (req, res) => {
   const { username, email, password, phone_number, role_id } = req.body;
@@ -87,6 +104,8 @@ const register = async (req, res) => {
       // For users with roles other than player, set isVerified to true directly
       await User.update({ isVerified: true }, { where: { id: newUser.id } });
     }
+    // Call createUserWallet to create a wallet for the user
+    await createUserWallet(newUser.id, newUser.role_id);
     res.status(201).json({ message: "User created successfully", token });
   } catch (err) {
     if (err.name === "SequelizeUniqueConstraintError") {

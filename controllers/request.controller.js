@@ -41,7 +41,7 @@ const sendJoinRequest = async (req, res) => {
     // Create a join request
     const request = await Request.create({
       type: "joinTeam",
-      status: "pending",
+      status: "pending", //accepted , declined
       sender_id: userId,
       receiver_id: captain.user_id, // Send the request to the team captain
       team_id: teamId,
