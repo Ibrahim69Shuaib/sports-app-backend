@@ -2,8 +2,14 @@ module.exports = (sequelize, Sequelize) => {
   const Player = sequelize.define(
     "player",
     {
+      name: {
+        type: Sequelize.STRING,
+        allowNull: false,
+        required: true,
+      },
       available: {
         type: Sequelize.BOOLEAN,
+        defaultValue: false,
       },
 
       pic: {

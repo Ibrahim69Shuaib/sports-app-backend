@@ -1,9 +1,10 @@
 module.exports = (sequelize, Sequelize) => {
-  const Favorite_Club = sequelize.define(
-    "favorite_club",
+  const follow_club = sequelize.define(
+    "follow_club",
     {
-      date: {
+      followedAt: {
         type: Sequelize.DATEONLY,
+        allowNull: false,
         defaultValue: Sequelize.NOW,
       },
     },
@@ -11,6 +12,5 @@ module.exports = (sequelize, Sequelize) => {
       timestamps: false,
     }
   );
-
-  return Favorite_Club;
+  return follow_club;
 };
