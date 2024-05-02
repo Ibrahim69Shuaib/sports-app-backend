@@ -4,7 +4,7 @@ const Field = db.field;
 
 // Define the cron job to run daily at midnight
 cron.schedule(
-  "0 0 * * *", // every day
+  "0 */12 * * *", // every day
   // "* * * * *", every minute
   async () => {
     try {

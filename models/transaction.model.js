@@ -14,7 +14,8 @@ module.exports = (sequelize, Sequelize) => {
         type: Sequelize.ENUM(
           "wallet_funding",
           "wallet_transfer",
-          "subscription_payment"
+          "subscription_payment",
+          "refund"
         ),
         allowNull: false,
       },
@@ -25,10 +26,6 @@ module.exports = (sequelize, Sequelize) => {
       },
       paymentIntentId: {
         type: Sequelize.STRING,
-        allowNull: true,
-      },
-      refundStatus: {
-        type: Sequelize.ENUM("pending", "completed", "failed"),
         allowNull: true,
       },
     },

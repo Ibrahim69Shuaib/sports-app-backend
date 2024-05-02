@@ -29,6 +29,8 @@ db.club_follow = require("./club_follow.model.js")(sequelize, Sequelize);
 db.wallet = require("./wallet.model.js")(sequelize, Sequelize);
 db.transaction = require("./transaction.model.js")(sequelize, Sequelize);
 db.player_lineup = require("./player_lineup.model.js")(sequelize, Sequelize);
+db.reservation = require("./reservation.model.js")(sequelize, Sequelize);
+db.refund_policy = require("./refund_policy.model.js")(sequelize, Sequelize);
 //db.notification= require("./notification..model.js")(sequelize, Sequelize);
 //db.plan= require ("./plan.model.js")(sequelize, Sequelize);
 //db.subscription= require ("./subscription.model.js")(sequelize,Sequelize);
@@ -147,7 +149,7 @@ db.player_lineup.belongsTo(db.player, {
   as: "player",
 });
 //-----------------------------------------------------
-// position - player_team relationship
+// position - player_lineup relationship
 db.position.hasMany(db.player_lineup, { foreignKey: "position_id" });
 db.player_lineup.belongsTo(db.position, {
   foreignKey: "position_id",
@@ -167,9 +169,25 @@ db.request.belongsTo(db.user, { foreignKey: "receiver_id", as: "receiver" });
 db.team.hasMany(db.request, { foreignKey: "team_id", as: "sentRequests" });
 db.request.belongsTo(db.team, { foreignKey: "team_id", as: "team" });
 //-----------------------------------------------------
+//reservation - user relationship (one to many)
+db.user.hasMany(db.reservation, { foreignKey: "user_id" });
+db.reservation.belongsTo(db.user, { foreignKey: "user_id" });
+//-----------------------------------------------------
+//reservation - user relationship (one to many)
+db.duration.hasMany(db.reservation, { foreignKey: "duration_id" });
+db.reservation.belongsTo(db.duration, { foreignKey: "duration_id" });
+//-----------------------------------------------------
+//reservation - transaction relationship (one to many)
+db.reservation.hasMany(db.transaction, { foreignKey: "reservation_id" });
+db.transaction.belongsTo(db.reservation, { foreignKey: "reservation_id" });
+//-----------------------------------------------------
+//refund_policy - club relationship (one to one)
+db.club.hasOne(db.refund_policy, { foreignKey: "club_id" });
+db.refund_policy.belongsTo(db.club, { foreignKey: "club_id" });
+//-----------------------------------------------------
 //request - post relationship (one to many)
 // db.post.hasMany(db.request, { foreignKey: 'postId', as: 'sentRequests' });
-// db.request.belongsTo(models.post, { foreignKey: 'postId', as: 'post' });
+// db.request.belongsTo(db.post, { foreignKey: 'postId', as: 'post' });
 //-----------------------------------------------------
 //request - tournament relationship (one to many)
 // db.tournament.hasMany(db.transaction, { foreignKey: 'tournament_id' });

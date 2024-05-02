@@ -7,6 +7,9 @@ module.exports = (sequelize, Sequelize) => {
         required: true,
         // unique: true,
         allowNull: false,
+        validate: {
+          len: [3, 10], // Name should be between 3 and 10 characters long
+        },
       },
       email: {
         type: Sequelize.STRING,

@@ -5,7 +5,8 @@ const express = require("express");
 const db = require("./models");
 const app = express();
 const PORT = process.env.PORT || 3000;
-require("./services/maintenanceScheduler");
+require("./services/maintenanceScheduler"); // field maintenance scheduler cron
+require("./services/reservationScheduler"); // reservation status scheduler cron
 
 async function initialize() {
   console.log(`Checking database connection...`);
@@ -56,6 +57,7 @@ require("./routes/stripe.routes")(app); // Stripe
 require("./routes/wallet.routes")(app); // Wallet
 require("./routes/transaction.routes")(app); // Transaction
 require("./routes/player_lineup.routes")(app); // Lineup
+require("./routes/reservation.routes")(app); // Reservation
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

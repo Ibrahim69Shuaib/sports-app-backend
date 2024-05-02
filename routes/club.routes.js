@@ -35,8 +35,30 @@ module.exports = (app) => {
   router.get("/all", verifyToken, club.getAllClubs);
   // Get all player wit pagination
   router.get("/list", verifyToken, club.getAllClubsWithPagination);
-  // Search for club
-  router.get("/search", verifyToken, club.searchClub);
+  /////////////////////////////////////////////////////////////////
+  // Create Refund Policy  <MUST>
+  router.post(
+    "/create-policy",
+    verifyToken,
+    checkRolesMiddleware([2]),
+    club.createRefundPolicy
+  );
+  // Update Refund Policy
+  router.put(
+    "/update-policy/:clubId",
+    verifyToken,
+    checkRolesMiddleware([2]),
+    club.updateRefundPolicy
+  );
+  // Delete Refund Policy
+  router.delete(
+    "/delete-policy/:clubId",
+    verifyToken,
+    checkRolesMiddleware([2]),
+    club.deleteRefundPolicy
+  );
+  // Get Refund Policy by clubId
+  router.get("/refund-policy/:clubId", verifyToken, club.getRefundPolicy);
 
   app.use("/api/club", router);
 };

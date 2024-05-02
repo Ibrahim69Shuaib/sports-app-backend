@@ -6,6 +6,9 @@ module.exports = (sequelize, Sequelize) => {
         type: Sequelize.STRING,
         allowNull: false,
         required: true,
+        validate: {
+          len: [3, 7], // Name should be between 3 and 7 characters long
+        },
       },
       available: {
         type: Sequelize.BOOLEAN,
@@ -25,7 +28,7 @@ module.exports = (sequelize, Sequelize) => {
       indexes: [
         {
           unique: true,
-          fields: ["user_id"],
+          fields: ["user_id", "name"],
         },
       ],
     }

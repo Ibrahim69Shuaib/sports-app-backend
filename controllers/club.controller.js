@@ -2,6 +2,7 @@
 
 const db = require("../models");
 const Club = db.club;
+const RefundPolicy = db.refund_policy;
 const { Op } = require("sequelize");
 const Sequelize = require("sequelize");
 
@@ -238,7 +239,139 @@ const searchClub = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+///////////////////////////////////////////////////////////////////////////////////////////
+// Create a refund policy for a club
+const createRefundPolicy = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { moreThanOneDay, oneDayBefore, duringReservation } = req.body;
+    // Find the club for the current user
+    const club = await Club.findOne({ where: { user_id: userId } });
+    if (!club) {
+      return res.status(404).json({ message: "Club not found" });
+    }
 
+    // Check if a refund policy already exists for the club
+    let refundPolicy = await RefundPolicy.findOne({
+      where: { club_id: club.id },
+    });
+    if (refundPolicy) {
+      return res
+        .status(400)
+        .json({ message: "Refund policy already exists for this club" });
+    }
+
+    // Create a new refund policy
+    refundPolicy = await RefundPolicy.create({
+      club_id: club.id,
+      more_than_one_day: moreThanOneDay,
+      one_day_before: oneDayBefore,
+      during_reservation: duringReservation,
+    });
+
+    res.status(201).json(refundPolicy);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+// Get refund policy for a club
+const getRefundPolicy = async (req, res) => {
+  try {
+    const clubId = req.params.clubId;
+
+    const refundPolicy = await RefundPolicy.findOne({
+      where: { club_id: clubId },
+    });
+    if (!refundPolicy) {
+      return res
+        .status(404)
+        .json({ message: "Refund policy not found for this club" });
+    }
+
+    res.status(200).json(refundPolicy);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+// Update refund policy for a club
+const updateRefundPolicy = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { clubId } = req.params;
+    const { moreThanOneDay, oneDayBefore, duringReservation } = req.body;
+    // Find the club
+    const club = await Club.findOne({ where: { id: clubId } });
+    if (!club) {
+      return res.status(404).json({ message: "Club not found" });
+    }
+
+    // Check if the authenticated user is the owner of the club
+    if (club.user_id !== userId) {
+      return res.status(403).json({
+        message:
+          "You are not authorized to update the refund policy for this club",
+      });
+    }
+    const refundPolicy = await RefundPolicy.findOne({
+      where: { club_id: clubId },
+    });
+    if (!refundPolicy) {
+      return res
+        .status(404)
+        .json({ message: "Refund policy not found for this club" });
+    }
+
+    // Update refund policy
+    refundPolicy.more_than_one_day = moreThanOneDay;
+    refundPolicy.one_day_before = oneDayBefore;
+    refundPolicy.during_reservation = duringReservation;
+    await refundPolicy.save();
+
+    res.status(200).json(refundPolicy);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+// Delete refund policy for a club (optional)
+const deleteRefundPolicy = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const clubId = req.params.clubId;
+    // Find the club
+    const club = await Club.findOne({ where: { id: clubId } });
+    if (!club) {
+      return res.status(404).json({ message: "Club not found" });
+    }
+
+    // Check if the authenticated user is the owner of the club
+    if (club.user_id !== userId) {
+      return res.status(403).json({
+        message:
+          "You are not authorized to update the refund policy for this club",
+      });
+    }
+    const refundPolicy = await RefundPolicy.findOne({
+      where: { club_id: clubId },
+    });
+    if (!refundPolicy) {
+      return res
+        .status(404)
+        .json({ message: "Refund policy not found for this club" });
+    }
+
+    await refundPolicy.destroy();
+
+    res.status(204).end();
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 module.exports = {
   createClub,
   updateClub,
@@ -249,4 +382,8 @@ module.exports = {
   getAllClubsWithPagination,
   getClubByUsername,
   searchClub,
+  createRefundPolicy,
+  updateRefundPolicy,
+  getRefundPolicy,
+  deleteRefundPolicy,
 };
