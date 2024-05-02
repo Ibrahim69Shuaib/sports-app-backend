@@ -63,7 +63,7 @@ const getAllTransactions = async (req, res) => {
     res.status(200).json(transactions);
   } catch (error) {
     console.error("Error fetching transactions:", error);
-    res.status(500).json({ error: "Error fetching transactions" });
+    res.status(500).json({ message: "Error fetching transactions" });
   }
 };
 
@@ -92,7 +92,7 @@ const getFilteredTransactions = async (req, res) => {
     res.status(200).json(filteredTransactions);
   } catch (error) {
     console.error("Error fetching filtered transactions:", error);
-    res.status(500).json({ error: "Error fetching filtered transactions" });
+    res.status(500).json({ message: "Error fetching filtered transactions" });
   }
 };
 
@@ -108,7 +108,7 @@ const getUserTransactions = async (req, res) => {
     res.status(200).json(userTransactions);
   } catch (error) {
     console.error("Error fetching user transactions:", error);
-    res.status(500).json({ error: "Error fetching user transactions" });
+    res.status(500).json({ message: "Error fetching user transactions" });
   }
 };
 
@@ -134,7 +134,7 @@ const getTransactionsByDateRange = async (req, res) => {
     console.error("Error fetching transactions by date range:", error);
     res
       .status(500)
-      .json({ error: "Error fetching transactions by date range" });
+      .json({ message: "Error fetching transactions by date range" });
   }
 };
 
@@ -157,7 +157,7 @@ const getTransactionSummary = async (req, res) => {
     res.status(200).json(summary);
   } catch (error) {
     console.error("Error fetching transaction summary:", error);
-    res.status(500).json({ error: "Error fetching transaction summary" });
+    res.status(500).json({ message: "Error fetching transaction summary" });
   }
 };
 

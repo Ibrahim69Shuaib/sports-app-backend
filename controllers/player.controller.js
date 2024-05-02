@@ -1,16 +1,12 @@
-// teams
-// team player
-// fav team
-
 const db = require("../models");
 const Player = db.player;
 const User = db.user;
 const Sport = db.sport;
 const Position = db.position;
-
+// name no more than 7 letters
 const createPlayer = async (req, res) => {
   try {
-    const { available, pic, location, sportId, positionId } = req.body;
+    const { name, available, pic, location, sportId, positionId } = req.body;
 
     // Assuming user information is available in req.user
     const userId = req.user.id;
@@ -26,6 +22,7 @@ const createPlayer = async (req, res) => {
 
     // Create a new player
     const player = await Player.create({
+      name,
       available,
       pic,
       location,
@@ -62,7 +59,7 @@ const getPlayerById = async (req, res) => {
 const updatePlayer = async (req, res) => {
   try {
     const playerId = req.params.id;
-    const { available, pic, location, sportId, positionId } = req.body;
+    const { name, available, pic, location, sportId, positionId } = req.body;
 
     const player = await Player.findByPk(playerId);
 
@@ -71,6 +68,7 @@ const updatePlayer = async (req, res) => {
     }
 
     // Update player details
+    player.name = name;
     player.available = available;
     player.pic = pic;
     player.location = location;

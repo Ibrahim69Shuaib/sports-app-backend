@@ -32,7 +32,7 @@ module.exports = (app) => {
       res.json({ clientSecret: paymentIntent.client_secret });
     } catch (error) {
       console.error("Error processing payment:", error);
-      res.status(500).json({ error: "Internal Server Error" });
+      res.status(500).json({ message: "Internal Server Error" });
     }
   });
   // Route to confirm payment and complete transaction
@@ -55,11 +55,11 @@ module.exports = (app) => {
         });
       } else {
         // Handle unsuccessful payment
-        res.status(400).json({ error: "Payment confirmation failed" });
+        res.status(400).json({ message: "Payment confirmation failed" });
       }
     } catch (error) {
       console.error("Error confirming payment:", error);
-      res.status(500).json({ error: "Internal Server Error" });
+      res.status(500).json({ message: "Internal Server Error" });
     }
   });
   app.use("/api/stripe", router);

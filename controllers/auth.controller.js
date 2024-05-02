@@ -7,10 +7,16 @@ const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 const validator = require("validator");
-const { sendVerificationEmail } = require("../services/node-mailer");
+const {
+  sendVerificationEmail,
+  sendVerificationCode,
+} = require("../services/node-mailer");
 
 dotenv.config();
-
+// Generate Verification Code
+const generateVerificationCode = () => {
+  return Math.floor(1000 + Math.random() * 9000).toString();
+};
 //Generating a random verification token
 const generateVerificationToken = async () => {
   return new Promise((resolve, reject) => {
@@ -48,7 +54,7 @@ const register = async (req, res) => {
 
   // Validate email on the server side
   if (!validator.isEmail(email)) {
-    return res.status(400).json({ error: "Invalid email address" });
+    return res.status(400).json({ message: "Invalid email address" });
   }
 
   // Validate phone number format
@@ -56,7 +62,7 @@ const register = async (req, res) => {
     !validator.isMobilePhone(phone_number, "any", { strictMode: false }) ||
     !phone_number.startsWith("+963")
   ) {
-    return res.status(400).json({ error: "Invalid phone number format" });
+    return res.status(400).json({ message: "Invalid phone number format" });
   }
 
   try {
@@ -64,7 +70,13 @@ const register = async (req, res) => {
     const existingUser = await User.findOne({ where: { username } });
 
     if (existingUser) {
-      return res.status(400).json({ error: "Username already taken" });
+      return res.status(400).json({ message: "Username already taken" });
+    }
+    //validate that no other user has the same username
+    const existingEmail = await User.findOne({ where: { email } });
+
+    if (existingEmail) {
+      return res.status(400).json({ message: "Email already taken" });
     }
     //validate that no other user has the same phone number
     const existingUserWithPhoneNumber = await User.findOne({
@@ -72,7 +84,7 @@ const register = async (req, res) => {
     });
 
     if (existingUserWithPhoneNumber) {
-      return res.status(400).json({ error: "Phone number already taken" });
+      return res.status(400).json({ message: "Phone number already taken" });
     }
     // Hash password before saving
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -182,46 +194,85 @@ const login = async (req, res) => {
     res.status(500).json({ message: "Error logging in" });
   }
 };
-// Request User Information
-const requestResetPassword = async (req, res) => {
-  const { username, email, phone_number } = req.body;
+// send reset password email and save it to the db
+const sendResetPasswordCode = async (req, res) => {
+  const { email } = req.body;
 
   try {
-    const user = await User.findOne({
-      where: { username, email, phone_number },
-    });
+    // Find the user by email
+    const user = await User.findOne({ where: { email } });
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // in a more secure way i can generate a token here and save it in the db and then send it via email to verify
+    // Generate a verification code
+    const verificationCode = generateVerificationCode();
 
-    res
-      .status(200)
-      .json({ message: "User found. You can now reset your password" });
+    // Check if the user already has a record in the token table
+    let tokenRecord = await Token.findOne({ where: { user_id: user.id } });
+
+    if (tokenRecord) {
+      // If the record exists, update it with the new password token
+      await tokenRecord.update({ password_token: verificationCode });
+    } else {
+      // If the record doesn't exist, create a new one
+      tokenRecord = await Token.create({
+        user_id: user.id,
+        password_token: verificationCode,
+      });
+    }
+
+    // Send the verification code to the user's email
+    await sendVerificationCode(email, verificationCode);
+
+    res.status(200).json({ message: "Verification code sent successfully" });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error requesting password reset" });
+    console.error("Error sending reset password code:", error);
+    res.status(500).json({ message: "Error sending verification code" });
   }
 };
 
-// Reset Password Endpoint
-const resetPassword = async (req, res) => {
-  const { username, email, phone_number, newPassword } = req.body;
+const verifyResetPasswordCode = async (req, res) => {
+  const { email, code } = req.body;
 
   try {
-    const user = await User.findOne({
-      where: { username, email, phone_number },
-    });
+    // Find the user by email
+    const user = await User.findOne({ where: { email } });
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Update user's password
-    user.password = await bcrypt.hash(newPassword, 10);
-    await user.save();
+    // Find the token record for the user
+    const token = await Token.findOne({ where: { user_id: user.id } });
+
+    if (!token || token.password_token !== code) {
+      return res.status(400).json({ message: "Invalid verification code" });
+    }
+
+    res.status(200).json({ message: "Verification code is valid" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error verifying verification code" });
+  }
+};
+const resetPassword = async (req, res) => {
+  const { email, newPassword } = req.body;
+
+  try {
+    // Find the user by email
+    const user = await User.findOne({ where: { email } });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update the user's password in the database
+    await User.update({ password: hashedPassword }, { where: { id: user.id } });
 
     res.status(200).json({ message: "Password reset successful" });
   } catch (error) {
@@ -229,11 +280,11 @@ const resetPassword = async (req, res) => {
     res.status(500).json({ message: "Error resetting password" });
   }
 };
-
 module.exports = {
   register,
   login,
   verifyEmail,
-  requestResetPassword,
+  sendResetPasswordCode,
+  verifyResetPasswordCode,
   resetPassword,
 };

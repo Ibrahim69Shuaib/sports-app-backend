@@ -11,7 +11,8 @@ module.exports = (app) => {
 
   // Login in
   router.post("/login", auth.login);
-  router.post("/request-reset-password", auth.requestResetPassword);
+  router.post("/reset-password/send-code", auth.sendResetPasswordCode);
+  router.post("/reset-password/verify-code", auth.verifyResetPasswordCode);
   router.post("/reset-password", auth.resetPassword);
 
   app.use("/api/auth", router);

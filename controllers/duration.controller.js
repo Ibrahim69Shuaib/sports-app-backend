@@ -7,6 +7,7 @@ const Club = db.club;
 // Create a new duration for a field
 const createDuration = async (req, res) => {
   try {
+    const userId = req.user.id;
     const { field_id, time } = req.body;
 
     // Find the field
@@ -14,7 +15,17 @@ const createDuration = async (req, res) => {
     if (!field) {
       return res.status(404).json({ message: "Field not found" });
     }
-
+    // Find the club of the user making the request
+    const club = await Club.findOne({ where: { user_id: userId } });
+    if (!club) {
+      return res.status(400).json({ message: "You must be a club" });
+    }
+    // checking if the duration he is adding belongs to field that he owns
+    if (field.club_id !== club.id) {
+      return res
+        .status(400)
+        .json({ message: "You can only add durations to your own field" });
+    }
     // Ensure time is in HH:mm format
     const formattedTime = moment(time, "HH:mm");
     if (!formattedTime.isValid()) {

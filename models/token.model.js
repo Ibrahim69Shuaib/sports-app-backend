@@ -8,6 +8,9 @@ module.exports = (sequelize, Sequelize) => {
       device_token: {
         type: Sequelize.STRING,
       },
+      password_token: {
+        type: Sequelize.STRING,
+      },
     },
 
     {
