@@ -120,6 +120,8 @@ const register = async (req, res) => {
     await createUserWallet(newUser.id, newUser.role_id);
     res.status(201).json({ message: "User created successfully", token });
   } catch (err) {
+    console.error(err);
+    console.log(err);
     if (
       err.name === "SequelizeUniqueConstraintError" ||
       "SequelizeValidationError"

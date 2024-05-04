@@ -144,7 +144,7 @@ const getReservationsByDate = async (req, res) => {
 };
 
 // refund code
-// TODO: if funds transferring fails then set the transaction as failed
+// TODO: if funds transferring fails then set the transaction as failed => used db transactions instead
 // TODO: test all possible refund amounts
 const processRefund = async (req, res) => {
   const userId = req.user.id;
