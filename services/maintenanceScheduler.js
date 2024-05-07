@@ -32,3 +32,4 @@ cron.schedule(
     timezone: "Etc/GMT+3", // Adjust the timezone as needed or local time zone
   }
 );
+console.log("Scheduled a cron to check for maintenance status of fields.");

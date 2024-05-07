@@ -2,7 +2,8 @@ const cron = require("node-cron");
 const db = require("../models");
 const { Op } = require("sequelize");
 const Reservation = db.reservation;
-
+//TODO: cron functions need testing on render.com
+//TODO: when reservation (team,player types only) is updated to "completed" find the club for that reservation and transfer the reservation price from his frozen balance to his regular balance.
 // Function to update reservations
 const updatePastIncompleteReservations = async () => {
   const today = new Date();

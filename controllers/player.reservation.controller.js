@@ -21,7 +21,7 @@ const isFieldAvailable = async (durationId, date) => {
   });
   return !reservation;
 };
-const isTransferSuccessful = async (playerWallet, clubWallet, price) => {
+async function isTransferSuccessful(playerWallet, clubWallet, price, t) {
   const playerBalance = new Decimal(playerWallet.balance);
   const priceDecimal = new Decimal(price);
 
@@ -39,118 +39,147 @@ const isTransferSuccessful = async (playerWallet, clubWallet, price) => {
   console.log("Updated club wallet:", clubWallet);
 
   playerWallet.balance = playerBalance.minus(priceDecimal).toNumber();
-  await Promise.all([playerWallet.save(), clubWallet.save()]);
+  // Save both wallets within the same transaction
+  await playerWallet.save({ transaction: t });
+  await clubWallet.save({ transaction: t });
 
   return true; // Funds transfer successful
-};
+}
 // Create a new  player reservation
-const createPlayerReservation = async (req, res) => {
+async function createPlayerReservation(req, res) {
   const { durationId, date } = req.body;
+  const userId = req.user.id;
+  const type = "player";
+  let transaction;
   try {
-    const userId = req.user.id;
-    const type = "player";
-    // Assuming you're using some authentication middleware
-    const duration = await Duration.findByPk(durationId, {
-      include: [{ model: Field }],
-    });
-
-    if (!duration || !duration.field) {
-      return res
-        .status(404)
-        .json({ message: "Invalid duration or no associated field." });
-    }
-
-    if (isBefore(parseISO(date), new Date())) {
-      return res.status(400).json({ message: "Cannot book on past date." });
-    }
-
-    if (!(await isFieldAvailable(duration.id, date))) {
-      return res
-        .status(400)
-        .json({ message: "Field is not available at the selected time." });
-    }
-    // Check if the field is under maintenance TODO: needs testing
-    const field = duration.field;
-    if (
-      field.isUnderMaintenance &&
-      field.start_date &&
-      field.end_date &&
-      isWithinInterval(parseISO(date), {
-        start: parseISO(field.start_date),
-        end: parseISO(field.end_date),
-      })
-    ) {
-      return res
-        .status(400)
-        .json({ message: "Field is under maintenance on the selected date." });
-    }
-    // Deduct amount from player's wallet and add to club's frozen wallet
-    const clubUser = await Club.findByPk(duration.field.club_id);
-    console.log("Club user fetched:", clubUser);
-    console.log("the user id of the club is", clubUser.user_id);
-    const playerWallet = await Wallet.findOne({ where: { user_id: userId } });
-    const clubWallet = await Wallet.findOne({
-      where: { user_id: clubUser.user_id }, // fixed
-    });
-    console.log("Player wallet fetched:", playerWallet);
-    console.log("Club wallet fetched:", clubWallet);
-    if (!playerWallet || !clubWallet) {
-      return res.status(400).json({ message: "Wallet not found." });
-    }
-
-    const price = duration.field.price;
-
-    const transferSuccess = await isTransferSuccessful(
-      playerWallet,
-      clubWallet,
-      price
-    );
-
-    if (!transferSuccess) {
-      // If transfer failed, update transaction status to failed
-      await Transaction.create({
-        user_id: userId,
-        reservation_id: null,
-        amount: price,
-        type: "wallet_transfer",
-        status: "failed",
+    // Start a transaction
+    transaction = await db.sequelize.transaction(async (t) => {
+      // Fetch necessary data within the transaction
+      const duration = await Duration.findByPk(durationId, {
+        include: [{ model: Field }],
+        transaction: t,
       });
-      return res.status(400).json({ message: "Funds transfer failed." });
-    }
 
-    // Create a pending transaction
-    const transaction = await Transaction.create({
-      user_id: userId,
-      reservation_id: null, // initially
-      amount: price,
-      type: "wallet_transfer",
-      status: "pending",
+      // All validation and business logic checks
+      if (!duration || !duration.field) {
+        throw new Error("Invalid duration or no associated field.");
+      }
+      if (isBefore(parseISO(date), new Date())) {
+        throw new Error("Cannot book on past date.");
+      }
+      if (!(await isFieldAvailable(duration.id, date))) {
+        throw new Error("Field is not available at the selected time.");
+      }
+      // Check if the field is under maintenance
+      const startDate = new Date(duration.field.start_date);
+      const endDate = new Date(duration.field.end_date);
+
+      if (
+        duration.field.isUnderMaintenance &&
+        startDate instanceof Date &&
+        !isNaN(startDate) &&
+        endDate instanceof Date &&
+        !isNaN(endDate) &&
+        isWithinInterval(date, { start: startDate, end: endDate })
+      ) {
+        console.error(
+          `Attempt to book during maintenance: ${date} falls between ${startDate} and ${endDate}`
+        );
+        throw new Error("Field is under maintenance on the selected date.");
+      }
+      // Wallet operations
+      const clubUser = await Club.findByPk(duration.field.club_id, {
+        transaction: t,
+      });
+      const playerWallet = await Wallet.findOne({
+        where: { user_id: userId },
+        transaction: t,
+      });
+      const clubWallet = await Wallet.findOne({
+        where: { user_id: clubUser.user_id },
+        transaction: t,
+      });
+
+      if (!playerWallet || !clubWallet) {
+        throw new Error("Wallet not found.");
+      }
+
+      // Perform fund transfer
+      if (
+        !(await isTransferSuccessful(
+          playerWallet,
+          clubWallet,
+          duration.field.price,
+          t
+        ))
+      ) {
+        // Log failed transaction
+        await Transaction.create(
+          {
+            user_id: userId,
+            reservation_id: null,
+            amount: duration.field.price,
+            type: "wallet_transfer",
+            status: "failed",
+          },
+          { transaction: t }
+        );
+        throw new Error("Funds transfer failed.");
+      }
+
+      // Create the reservation
+      const reservation = await Reservation.create(
+        {
+          user_id: userId,
+          duration_id: durationId,
+          type,
+          status: "incomplete",
+          date,
+          is_refund: false,
+        },
+        { transaction: t }
+      );
+
+      // Create and update transaction
+      const UserTransactionRecord = await Transaction.create(
+        {
+          user_id: userId,
+          reservation_id: reservation.id,
+          amount: duration.field.price,
+          type: "wallet_transfer",
+          status: "pending",
+        },
+        { transaction: t }
+      );
+      const ClubTransactionRecord = await Transaction.create(
+        {
+          user_id: clubUser.user_id, // club user id
+          reservation_id: reservation.id,
+          amount: -duration.field.price,
+          type: "wallet_transfer",
+          status: "pending",
+        },
+        { transaction: t }
+      );
+
+      UserTransactionRecord.status = "completed";
+      ClubTransactionRecord.status = "completed";
+      await UserTransactionRecord.save({ transaction: t });
+      await ClubTransactionRecord.save({ transaction: t });
+
+      return reservation; // This will be the response if everything succeeds
     });
-    // Update the transaction with the reservation ID
-    const reservation = await Reservation.create({
-      user_id: userId,
-      duration_id: durationId,
-      type,
-      status: "incomplete",
-      date,
-      is_refund: false,
-    });
 
-    transaction.reservation_id = reservation.id; // Assign the reservation ID
-    await transaction.save();
-    // If funds transfer is successful, update transaction status to completed
-    transaction.status = "completed";
-    await transaction.save();
-
-    res.status(201).json(reservation);
+    // If the transaction is successful, send the reservation data
+    res.status(201).json(transaction);
   } catch (error) {
+    // If there's an error, rollback any changes
+    if (transaction) await transaction.rollback();
     console.error("Error creating reservation:", error);
     res.status(500).json({
-      message: "Failed to create reservation due to an internal error.",
+      message: error.message,
+      error: "Failed to create reservation due to an internal error.",
     });
   }
-};
+}
 module.exports = { createPlayerReservation };
-
-// transaction is being created and reservation is being created even though the player has no enough funds in his wallet and server is crashing
-// add reservation id to the transaction associated with it

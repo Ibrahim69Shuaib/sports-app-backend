@@ -173,37 +173,34 @@ const processRefund = async (req, res) => {
           ],
         },
       ],
+      transaction: transaction,
     });
 
     if (!reservation) {
-      return res.status(404).json({ message: "Reservation not found." });
+      throw new Error("Reservation not found.");
     }
     if (reservation.user_id !== userId) {
-      return res
-        .status(400)
-        .json({ message: "You can only refund your own reservations." });
+      throw new Error("You can only refund your own reservations.");
     }
     // Check if reservation status is complete
     if (reservation.status === "completed") {
-      return res
-        .status(400)
-        .json({ message: "Cannot refund a completed reservation." });
+      throw new Error("Cannot refund a completed reservation.");
     }
     if (reservation.status === "canceled" || reservation.is_refunded == "1") {
-      return res
-        .status(400)
-        .json({ message: "Cannot refund a canceled or refunded reservation." });
+      throw new Error("Cannot refund a canceled or refunded reservation.");
     }
     if (reservation.type === "club") {
-      return res
-        .status(400)
-        .json({ message: "you can not refund this type of reservations" });
+      throw new Error("You cannot refund this type of reservation.");
     }
-    const duration = await Duration.findByPk(reservation.duration_id);
+    const duration = await Duration.findByPk(reservation.duration_id, {
+      transaction: transaction,
+    });
     if (!duration) {
       return res.status(404).json({ message: "Duration not found." });
     }
-    const field = await Field.findByPk(duration.field_id);
+    const field = await Field.findByPk(duration.field_id, {
+      transaction: transaction,
+    });
     if (!field) {
       return res.status(404).json({ message: "Field not found." });
     }
@@ -214,8 +211,8 @@ const processRefund = async (req, res) => {
     const daysDiff = differenceInDays(reservationDate, today);
 
     let refundPercentage = 0;
-    const policy = reservation.duration.field.club.RefundPolicy;
-    // console.log(reservation.duration.field.club.RefundPolicy);
+    const policy = reservation.duration.field.club.refundpolicy;
+    // console.log(reservation.duration.field.club.refundpolicy);
     // console.log(reservation);
     // console.log(policy);
     if (daysDiff > 1) {
@@ -233,9 +230,11 @@ const processRefund = async (req, res) => {
     // Process the refund by updating balances and creating transaction records
     const playerWallet = await Wallet.findOne({
       where: { user_id: reservation.user_id },
+      transaction: transaction,
     });
     const clubWallet = await Wallet.findOne({
       where: { user_id: reservation.duration.field.club.user_id },
+      transaction: transaction,
     });
 
     if (!playerWallet || !clubWallet) {
@@ -253,8 +252,8 @@ const processRefund = async (req, res) => {
 
     // Save wallet updates within the transaction if transaction fails it rolls backs so no partially updated attributes or tables
     await Promise.all([
-      playerWallet.save({ transaction }),
-      clubWallet.save({ transaction }),
+      playerWallet.save({ transaction: transaction }),
+      clubWallet.save({ transaction: transaction }),
     ]);
     // Create transaction records for the refund
     const playerTransaction = await Transaction.create(
@@ -265,7 +264,7 @@ const processRefund = async (req, res) => {
         status: "completed",
         reservation_id: reservation.id,
       },
-      { transaction }
+      { transaction: transaction }
     );
 
     const clubTransaction = await Transaction.create(
@@ -276,13 +275,13 @@ const processRefund = async (req, res) => {
         status: "completed",
         reservation_id: reservation.id,
       },
-      { transaction }
+      { transaction: transaction }
     );
 
     // Change reservation status to canceled and set is_refunded to true
     reservation.status = "canceled";
     reservation.is_refunded = true;
-    await reservation.save({ transaction });
+    await reservation.save({ transaction: transaction });
     await transaction.commit(); // Commit the transaction
     res
       .status(200)
@@ -290,9 +289,10 @@ const processRefund = async (req, res) => {
   } catch (error) {
     await transaction.rollback(); // Rollback the transaction
     console.error("Error processing refund:", error);
-    res
-      .status(500)
-      .json({ message: "Failed to process refund due to an internal error." });
+    res.status(500).json({
+      message: error.message,
+      error: "Failed to create reservation due to an internal error.",
+    });
   }
 };
 
@@ -306,5 +306,3 @@ module.exports = {
   getReservationsByUserId,
   processRefund,
 };
-
-// refund logic might go here

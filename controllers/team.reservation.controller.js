@@ -13,7 +13,6 @@ const { addDays, isBefore, parseISO, isWithinInterval } = require("date-fns");
 
 // Helper function to check if the field is already booked
 const isFieldAvailable = async (durationId, date) => {
-  // need to be replaced with durationId / duration.id instead of  fieldId and time
   const reservation = await Reservation.findOne({
     where: {
       duration_id: durationId,
@@ -23,16 +22,18 @@ const isFieldAvailable = async (durationId, date) => {
   });
   return !reservation;
 };
-// Function to check if user is a team captain
+// Function to check if user is a team captain TODO: needs testing
 const isUserTeamCaptain = async (userId) => {
-  const player = await Player.findOne({ where: { user_id: userId } });
+  const player = await Player.findOne({
+    where: { user_id: userId },
+  });
   if (!player) {
     return false;
   }
   const team = await Team.findByPk(player.team_id);
   return team && team.captain_id === player.id;
 };
-const isTransferSuccessful = async (playerWallet, clubWallet, price) => {
+async function isTransferSuccessful(playerWallet, clubWallet, price, t) {
   const playerBalance = new Decimal(playerWallet.balance);
   const priceDecimal = new Decimal(price);
 
@@ -50,180 +51,151 @@ const isTransferSuccessful = async (playerWallet, clubWallet, price) => {
   console.log("Updated club wallet:", clubWallet);
 
   playerWallet.balance = playerBalance.minus(priceDecimal).toNumber();
-  await Promise.all([playerWallet.save(), clubWallet.save()]);
+  // Save both wallets within the same transaction
+  await playerWallet.save({ transaction: t });
+  await clubWallet.save({ transaction: t });
 
   return true; // Funds transfer successful
-};
+}
 // Create a new  team reservation
-const createTeamReservation = async (req, res) => {
+async function createTeamReservation(req, res) {
   const { durationId, date } = req.body;
+  const userId = req.user.id;
+  const type = "team"; // Hardcode the type as "team"
+  let transaction;
   try {
-    const userId = req.user.id;
-    const type = "team"; // Hardcode the type as "team"
-    // Fetch the duration and related field data
-    const duration = await Duration.findByPk(durationId, {
-      include: [{ model: Field }],
-    });
-    // Debugging log to check what's fetched
-    console.log("Duration fetched:", duration);
-    if (!duration) {
-      return res.status(404).json({ message: "Duration not found." });
-    }
-    if (!duration.field) {
-      return res.status(404).json({ message: "Associated field not found." });
-    }
-    console.log("Field associated with duration:", duration.field); // Log the field object
-    console.log(duration.field.club_id); // Check if club_id is accessible
-    // Check if user is eligible for making the reservation
-    if (type === "team" && !(await isUserTeamCaptain(userId))) {
-      return res
-        .status(403)
-        .json({ message: "User must be a team captain to book for a team." });
-    }
-
-    // Ensure the date is in the future
-    if (isBefore(parseISO(date), new Date())) {
-      return res.status(400).json({ message: "Cannot book on past date." });
-    }
-
-    // Check field availability
-    if (!(await isFieldAvailable(duration.id, date))) {
-      return res
-        .status(400)
-        .json({ message: "Field is not available at the selected time." });
-    }
-    // Check if the field is under maintenance TODO: needs testing
-    const field = duration.field;
-    if (
-      field.isUnderMaintenance &&
-      field.start_date &&
-      field.end_date &&
-      isWithinInterval(parseISO(date), {
-        start: parseISO(field.start_date),
-        end: parseISO(field.end_date),
-      })
-    ) {
-      return res
-        .status(400)
-        .json({ message: "Field is under maintenance on the selected date." });
-    }
-    // Deduct amount from player's wallet and add to club's frozen wallet
-    const clubUser = await Club.findByPk(duration.field.club_id);
-    console.log("Club user fetched:", clubUser);
-    console.log("the user id of the club is", clubUser.user_id);
-    const playerWallet = await Wallet.findOne({ where: { user_id: userId } });
-    const clubWallet = await Wallet.findOne({
-      where: { user_id: clubUser.user_id }, // fixed
-    });
-    console.log("Player wallet fetched:", playerWallet);
-    console.log("Club wallet fetched:", clubWallet);
-    if (!playerWallet || !clubWallet) {
-      return res.status(400).json({ message: "Wallet not found." });
-    }
-
-    const price = duration.field.price;
-
-    const transferSuccess = await isTransferSuccessful(
-      playerWallet,
-      clubWallet,
-      price
-    );
-
-    if (!transferSuccess) {
-      // If transfer failed, update transaction status to failed
-      await Transaction.create({
-        user_id: userId,
-        reservation_id: null,
-        amount: price,
-        type: "wallet_transfer",
-        status: "failed",
+    transaction = await db.sequelize.transaction(async (t) => {
+      // Fetch necessary data within the transaction
+      const duration = await Duration.findByPk(durationId, {
+        include: [{ model: Field }],
+        transaction: t,
       });
-      return res.status(400).json({ message: "Funds transfer failed." });
-    }
 
-    // Create a pending transaction
-    const transaction = await Transaction.create({
-      user_id: userId,
-      reservation_id: null, // initially
-      amount: price,
-      type: "wallet_transfer",
-      status: "pending",
+      if (!duration || !duration.field) {
+        throw new Error("Invalid duration or no associated field.");
+      }
+
+      if (type === "team" && !(await isUserTeamCaptain(userId))) {
+        throw new Error("User must be a team captain to book for a team.");
+      }
+
+      if (isBefore(parseISO(date), new Date())) {
+        throw new Error("Cannot book on past date.");
+      }
+
+      if (!(await isFieldAvailable(duration.id, date))) {
+        throw new Error("Field is not available at the selected time.");
+      }
+      // Check if the field is under maintenance
+      const startDate = new Date(duration.field.start_date);
+      const endDate = new Date(duration.field.end_date);
+
+      if (
+        duration.field.isUnderMaintenance &&
+        startDate instanceof Date &&
+        !isNaN(startDate) &&
+        endDate instanceof Date &&
+        !isNaN(endDate) &&
+        isWithinInterval(date, { start: startDate, end: endDate })
+      ) {
+        console.error(
+          `Attempt to book during maintenance: ${date} falls between ${startDate} and ${endDate}`
+        );
+        throw new Error("Field is under maintenance on the selected date.");
+      }
+      const clubUser = await Club.findByPk(duration.field.club_id, {
+        transaction: t,
+      });
+      const playerWallet = await Wallet.findOne({
+        where: { user_id: userId },
+        transaction: t,
+      });
+      const clubWallet = await Wallet.findOne({
+        where: { user_id: clubUser.user_id },
+        transaction: t,
+      });
+
+      if (!playerWallet || !clubWallet) {
+        throw new Error("Wallet not found.");
+      }
+
+      const price = duration.field.price;
+
+      // Perform fund transfer
+      if (
+        !(await isTransferSuccessful(
+          playerWallet,
+          clubWallet,
+          duration.field.price,
+          t
+        ))
+      ) {
+        // Log failed transaction
+        await Transaction.create(
+          {
+            user_id: userId,
+            reservation_id: null,
+            amount: duration.field.price,
+            type: "wallet_transfer",
+            status: "failed",
+          },
+          { transaction: t }
+        );
+        throw new Error("Funds transfer failed.");
+      }
+
+      const reservation = await Reservation.create(
+        {
+          user_id: userId,
+          duration_id: durationId,
+          type,
+          status: "incomplete",
+          date,
+          is_refund: false,
+        },
+        { transaction: t }
+      );
+
+      // Create and update transaction
+      const UserTransactionRecord = await Transaction.create(
+        {
+          user_id: userId,
+          reservation_id: reservation.id,
+          amount: duration.field.price,
+          type: "wallet_transfer",
+          status: "pending",
+        },
+        { transaction: t }
+      );
+      const ClubTransactionRecord = await Transaction.create(
+        {
+          user_id: clubUser.user_id, // club user id
+          reservation_id: reservation.id,
+          amount: -duration.field.price,
+          type: "wallet_transfer",
+          status: "pending",
+        },
+        { transaction: t }
+      );
+
+      UserTransactionRecord.status = "completed";
+      ClubTransactionRecord.status = "completed";
+      await UserTransactionRecord.save({ transaction: t });
+      await ClubTransactionRecord.save({ transaction: t });
+      return reservation; // This will be the response if everything succeeds
     });
-    // Update the transaction with the reservation ID
-    const reservation = await Reservation.create({
-      user_id: userId,
-      duration_id: durationId,
-      type,
-      status: "incomplete",
-      date,
-      is_refund: false,
-    });
-
-    transaction.reservation_id = reservation.id; // Assign the reservation ID
-    await transaction.save();
-    // If funds transfer is successful, update transaction status to completed
-    transaction.status = "completed";
-    await transaction.save();
-
-    res.status(201).json(reservation);
+    res.status(201).json(transaction);
   } catch (error) {
+    // If there's an error, rollback any changes
+    if (transaction) await transaction.rollback();
     console.error("Error creating reservation:", error);
     res.status(500).json({
-      message: "Failed to create reservation due to an internal error.",
+      message: error.message,
+      error: "Failed to create reservation due to an internal error.",
     });
   }
-};
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Handle refund for a reservation
-// kinda good but need to consider the club refund policy and check the reservation date with refund request date
-const handleRefund = async (req, res) => {
-  const { reservationId } = req.body;
-  try {
-    const reservation = await Reservation.findByPk(reservationId, {
-      include: [{ model: Duration, include: [{ model: Field }] }],
-    });
-    if (!reservation) {
-      return res.status(404).json({ message: "Reservation not found." });
-    }
-    if (reservation.is_refund) {
-      return res
-        .status(400)
-        .json({ message: "Refund already processed for this reservation." });
-    }
-
-    // Process the refund
-    const wallet = await Wallet.findOne({
-      where: { user_id: reservation.user_id },
-    });
-    wallet.balance += reservation.Duration.field.price;
-    wallet.frozenBalance -= reservation.Duration.field.price;
-    await wallet.save();
-
-    // Update reservation status to canceled
-    reservation.status = "canceled";
-    reservation.is_refund = true;
-    await reservation.save();
-
-    // Create a refund transaction
-    await Transaction.create({
-      user_id: reservation.user_id,
-      amount: reservation.Duration.field.price,
-      type: "wallet_transfer",
-      status: "completed",
-      reservation_id: reservation.id,
-    });
-
-    res.status(200).json({ message: "Refund processed successfully." });
-  } catch (error) {
-    console.error("Error processing refund:", error);
-    res
-      .status(500)
-      .json({ message: "Failed to process refund due to an internal error." });
-  }
-};
+}
 
 module.exports = {
   createTeamReservation,
-  handleRefund,
 };

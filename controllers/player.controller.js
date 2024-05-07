@@ -6,7 +6,8 @@ const Position = db.position;
 // name no more than 7 letters
 const createPlayer = async (req, res) => {
   try {
-    const { name, available, pic, location, sportId, positionId } = req.body;
+    const { name, available, pic, location, city, sportId, positionId } =
+      req.body;
 
     // Assuming user information is available in req.user
     const userId = req.user.id;
@@ -26,6 +27,7 @@ const createPlayer = async (req, res) => {
       available,
       pic,
       location,
+      city,
       user_id: userId,
       sport_id: sportId,
       position_id: positionId,
@@ -65,7 +67,8 @@ const getPlayerById = async (req, res) => {
 const updatePlayer = async (req, res) => {
   try {
     const playerId = req.params.id;
-    const { name, available, pic, location, sportId, positionId } = req.body;
+    const { name, available, pic, location, city, sportId, positionId } =
+      req.body;
 
     const player = await Player.findByPk(playerId);
 
@@ -78,6 +81,7 @@ const updatePlayer = async (req, res) => {
     player.available = available;
     player.pic = pic;
     player.location = location;
+    player.city = city;
     player.sport_id = sportId;
     player.position_id = positionId;
 

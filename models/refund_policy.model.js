@@ -1,6 +1,6 @@
 module.exports = (sequelize, Sequelize) => {
   const RefundPolicy = sequelize.define(
-    "RefundPolicy",
+    "refundpolicy",
     {
       more_than_one_day: {
         type: Sequelize.DECIMAL(5, 2),

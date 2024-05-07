@@ -65,6 +65,13 @@ module.exports = (app) => {
     checkRolesMiddleware([1]),
     reservation.processRefund
   );
+  // cancel club type reservation
+  router.post(
+    "/cancel/:reservationId",
+    verifyToken,
+    checkRolesMiddleware([2]),
+    club_reservation.cancelReservation
+  );
 
   app.use("/api/reservation", router);
 };

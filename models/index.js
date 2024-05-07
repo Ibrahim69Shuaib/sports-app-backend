@@ -4,7 +4,7 @@ const Sequelize = require("sequelize");
 const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
   host: dbConfig.HOST,
   dialect: dbConfig.dialect,
-  port: "3307", // this line for filess io database connection 3306 for local instance
+  port: dbConfig.port, // 3307 for filess ,this line for filess io database connection 3306 for local instance
   // logging: (...msg) => console.log(msg),
 });
 

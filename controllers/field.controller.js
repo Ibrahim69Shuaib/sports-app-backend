@@ -1,9 +1,17 @@
+const Decimal = require("decimal.js");
 const db = require("../models");
 const Field = db.field;
 const Sport = db.sport;
 const Club = db.club;
+const Transaction = db.transaction;
+const Wallet = db.wallet;
+const Reservation = db.reservation;
+const Duration = db.duration;
+const Player = db.player;
+const User = db.user;
 const { Op } = require("sequelize");
-//TODO: need to modify maintenance logic to include reservations and refunds
+//TODO: when putting field under maintenance find reservations during maintenance date and full refund them creating 2 transactions one for the club and one for the reservation owner , but club reservations cannot be refunded , it has to be canceled by the club and use sequelize transactions to encapsulate it.
+// find the all durations of that field => find all reservations with that duration => compare reservations date with start and end of field maintenance , if there is a reservation during that maintenance then fully refund it by creating transactions and deducting its full price from the club frozen wallet and then adding balance to the wallet of the reservation owner and change the reservation status to canceled and is_refunded to true.
 // Create a new field
 const createField = async (req, res) => {
   try {
@@ -113,36 +121,137 @@ const deleteField = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
-// Put a field under maintenance
+// Put a field under maintenance and refund all conflicting reservations
 const putFieldUnderMaintenance = async (req, res) => {
+  const transaction = await db.sequelize.transaction();
   try {
     const { id } = req.params;
     const { start_date, end_date } = req.body;
-    // find the field by that id
+    const parsedStartDate = new Date(start_date);
+    const parsedEndDate = new Date(end_date);
+
+    // Find the field by that id
     const field = await Field.findByPk(id);
     if (!field) {
-      return res.status(404).json({ message: "Field not found" });
+      throw new Error("Field not found");
     }
+
     // Assuming the user ID is available in req.user.id
     const club = await Club.findOne({ where: { user_id: req.user.id } });
     if (!club) {
-      return res.status(404).json({ message: "Club not found" });
+      throw new Error("Club not found");
     }
     if (field.club_id !== club.id) {
-      return res.status(403).json({ message: "Unauthorized operation" });
+      throw new Error("Unauthorized operation");
     }
 
-    await field.update({
-      isUnderMaintenance: true,
-      start_date,
-      end_date,
+    // Update field to under maintenance
+    await field.update(
+      {
+        isUnderMaintenance: true,
+        start_date: parsedStartDate,
+        end_date: parsedEndDate,
+      },
+      { transaction }
+    );
+
+    // Find all durations for that field
+    const durations = await Duration.findAll({
+      where: { field_id: id },
     });
-    res.status(200).json({ message: "Field is now under maintenance" });
+
+    // Find all incomplete reservations with those durations
+    const reservations = await Reservation.findAll({
+      where: {
+        duration_id: {
+          [db.Sequelize.Op.in]: durations.map((d) => d.id),
+        },
+        date: {
+          [db.Sequelize.Op.between]: [parsedStartDate, parsedEndDate],
+        },
+        status: "incomplete", // Assuming 'incomplete' is the status for not yet fulfilled reservations
+      },
+      include: [
+        {
+          model: User,
+          required: true, // Make the association required to ensure the user exists
+          include: [
+            {
+              model: Wallet,
+              as: "wallet", // Define the alias for the association
+            },
+          ],
+        },
+      ],
+    });
+    // Process refunds for each reservation found
+    for (let reservation of reservations) {
+      const refundAmount = field.price; // Using field.price as the refund amount
+      const userWallet = reservation.user.wallet;
+      const clubWallet = await Wallet.findOne({
+        where: { user_id: club.user_id },
+      });
+
+      // using decimal js to work with wallets
+      const playerBalance = new Decimal(userWallet.balance);
+      const clubFrozenBalance = new Decimal(clubWallet.frozenBalance);
+      const transferAmount = new Decimal(refundAmount);
+      // adding and subtracting balance
+      const newPlayerBalance = playerBalance.plus(transferAmount);
+      const newClubFrozenBalance = clubFrozenBalance.minus(transferAmount);
+      // Update the wallet balances
+      userWallet.balance = newPlayerBalance.toNumber();
+      clubWallet.frozenBalance = newClubFrozenBalance.toNumber();
+
+      // Create transaction records for refund
+      await Transaction.create(
+        {
+          user_id: reservation.user_id,
+          amount: refundAmount,
+          type: "refund",
+          status: "completed",
+          reservation_id: reservation.id,
+        },
+        { transaction }
+      );
+
+      await Transaction.create(
+        {
+          user_id: club.user_id,
+          amount: -refundAmount,
+          type: "refund",
+          status: "completed",
+          reservation_id: reservation.id,
+        },
+        { transaction }
+      );
+
+      // Update reservation status
+      reservation.status = "canceled";
+      reservation.is_refunded = true;
+      await reservation.save({ transaction });
+
+      // Save wallet updates
+      await userWallet.save({ transaction });
+      await clubWallet.save({ transaction });
+    }
+
+    await transaction.commit();
+    res.status(200).json({
+      message:
+        "Field is now under maintenance and all conflicting reservations have been refunded.",
+    });
   } catch (error) {
+    await transaction.rollback();
     console.error(error);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(500).json({
+      message: error.message,
+      error: "Internal Server Error.",
+    });
   }
 };
+
+// remove field from field maintenance
 const setFieldMaintenanceStatus = async (req, res) => {
   const { id } = req.params;
   try {
