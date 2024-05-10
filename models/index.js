@@ -32,9 +32,12 @@ db.transaction = require("./transaction.model.js")(sequelize, Sequelize);
 db.player_lineup = require("./player_lineup.model.js")(sequelize, Sequelize);
 db.reservation = require("./reservation.model.js")(sequelize, Sequelize);
 db.refund_policy = require("./refund_policy.model.js")(sequelize, Sequelize);
+db.utilities = require("./utilities.model.js")(sequelize, Sequelize);
 //db.notification= require("./notification..model.js")(sequelize, Sequelize);
 //db.plan= require ("./plan.model.js")(sequelize, Sequelize);
 //db.subscription= require ("./subscription.model.js")(sequelize,Sequelize);
+//tournaments...
+// maybe club rating
 
 //RelationShips =>
 
@@ -87,7 +90,7 @@ db.player.belongsTo(db.sport, { foreignKey: "sport_id" });
 db.position.hasMany(db.player, { foreignKey: "position_id" });
 db.player.belongsTo(db.position, { foreignKey: "position_id" });
 //-----------------------------------------------------
-//sport - position relationship (many to many)
+//sport - position relationship (many to many) FIXME: BE WARE FK ARE AUTOMATICALLY GENERATED HERE (sportId , positionId)
 db.sport.belongsToMany(db.position, {
   through: "sport_position",
   timestamps: false,
@@ -139,11 +142,11 @@ db.player.hasOne(db.team, { foreignKey: "captain_id", as: "captainTeam" }); // p
 db.team.belongsTo(db.sport, { foreignKey: "sport_id" });
 db.sport.hasMany(db.team, { foreignKey: "sport_id" });
 //-----------------------------------------------------
-// team - player_lineup relationship
+// team - player_lineup relationship (one to many)
 db.team.hasMany(db.player_lineup, { foreignKey: "team_id" });
 db.player_lineup.belongsTo(db.team, { foreignKey: "team_id", as: "team" });
 //-----------------------------------------------------
-// player - player_lineup relationship
+// player - player_lineup relationship (one to many)
 db.player.hasMany(db.player_lineup, { foreignKey: "player_id" });
 db.player_lineup.belongsTo(db.player, {
   foreignKey: "player_id",
@@ -195,7 +198,16 @@ db.refund_policy.belongsTo(db.club, { foreignKey: "club_id" });
 // db.transaction.belongsTo(db.tournament, { foreignKey: 'tournament_id' });
 //-----------------------------------------------------
 // club - utility relationship (many to many) through club_utility
-
+db.club.belongsToMany(db.utilities, {
+  through: "club_utilities",
+  foreignKey: "club_id",
+  timestamps: false,
+});
+db.utilities.belongsToMany(db.club, {
+  through: "club_utilities",
+  foreignKey: "utilities_id",
+  timestamps: false,
+});
 //-----------------------------------------------------
 
 // club - subscription relationship (one to many) one club many subscriptions

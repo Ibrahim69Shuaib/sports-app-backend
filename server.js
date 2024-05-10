@@ -1,7 +1,7 @@
 require("dotenv").config();
 const express = require("express");
-//cors package
-//helmet package
+//cors package >> required if the frontend is hosted
+//helmet package >> for improved security
 const db = require("./models");
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -58,6 +58,8 @@ require("./routes/wallet.routes")(app); // Wallet
 require("./routes/transaction.routes")(app); // Transaction
 require("./routes/player_lineup.routes")(app); // Lineup
 require("./routes/reservation.routes")(app); // Reservation
+require("./routes/search.routes")(app); // Search
+require("./routes/utilities.routes")(app); // Search
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

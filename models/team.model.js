@@ -13,9 +13,6 @@ module.exports = (sequelize, Sequelize) => {
         type: Sequelize.BOOLEAN,
         default: false,
       },
-      lineup: {
-        type: Sequelize.STRING,
-      },
       description: {
         type: Sequelize.STRING,
       },
