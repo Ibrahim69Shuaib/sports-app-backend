@@ -1,8 +1,10 @@
+const { where } = require("sequelize");
 const db = require("../models");
 const Player = db.player;
 const User = db.user;
 const Sport = db.sport;
 const Position = db.position;
+const Team = db.team;
 // name no more than 7 letters
 const createPlayer = async (req, res) => {
   try {
@@ -156,7 +158,7 @@ const getCurrentPlayerDetails = async (req, res) => {
 
     const player = await Player.findOne({
       where: { user_id: userId },
-      include: [Sport, Position],
+      include: [Sport, Position], // maybe add team and lineup
     });
 
     if (!player) {
@@ -235,6 +237,37 @@ const getPlayerByUserId = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+const isTeamCaptain = async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    // Fetch the player details
+    const player = await Player.findOne({ where: { user_id: userId } });
+
+    if (!player) {
+      return res.status(404).json({ message: "Player not found." });
+    }
+
+    // Fetch the team details using the team_id from the player model
+    const team = await Team.findByPk(player.team_id);
+
+    if (!team) {
+      return res.status(404).json({ message: "Team not found." });
+    }
+
+    // Check if the player is the team captain
+    const isCaptain = team.captain_id === player.id;
+
+    res.status(200).json({ isCaptain });
+  } catch (error) {
+    console.error("Error checking team captain status:", error);
+    res
+      .status(500)
+      .json({ message: "Error checking team captain status", error });
+  }
+};
+
 module.exports = {
   createPlayer,
   getAllPlayers,
@@ -246,4 +279,5 @@ module.exports = {
   getAllPlayersWithPagination,
   getPlayerByUsername,
   getPlayerByUserId,
+  isTeamCaptain,
 };

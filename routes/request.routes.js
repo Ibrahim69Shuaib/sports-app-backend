@@ -38,6 +38,21 @@ module.exports = (app) => {
   router.get("/received", verifyToken, request.getAllReceivedRequests);
   // get all sent received requests with filtering by "type" for the logged in user (player)
   router.get("/received/:type", verifyToken, request.filterRequestsByType); //type : ENUM[joinTeam,inviteToTeam,joinTournament,joinPost,enemyTeam]
+  // Send Post Request to Post Owner
+  router.post(
+    "/post/:postId",
+    verifyToken,
+    checkRolesMiddleware([1]),
+    request.createPostRequest
+  );
+  // Respond to POST Request and decline all other pending requests...
+  router.put(
+    "/post/respond/:requestId",
+    verifyToken,
+    checkRolesMiddleware([1]),
+    request.respondToPostRequest
+  );
+  // router.get("/received/:postId", verifyToken, request.getRequestsByPost); //type : ENUM[joinTeam,inviteToTeam,joinTournament,joinPost,enemyTeam]
 
   app.use("/api/request", router);
 };

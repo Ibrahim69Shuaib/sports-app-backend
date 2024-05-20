@@ -7,8 +7,8 @@ module.exports = (sequelize, Sequelize) => {
           "joinTeam",
           "inviteToTeam",
           "joinTournament",
-          "joinPost",
-          "enemyTeam"
+          "needPlayer",
+          "needEnemyTeam"
         ),
         allowNull: false,
       },

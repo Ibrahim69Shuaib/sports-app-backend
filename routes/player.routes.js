@@ -39,6 +39,8 @@ module.exports = (app) => {
   router.get("/sport/:sportId", verifyToken, player.getPlayersBySport);
   // Get players by position
   router.get("/position/:positionId", verifyToken, player.getPlayersByPosition);
+  // get is Team Captain
+  router.get("/isTeamCaptain", verifyToken, player.isTeamCaptain);
 
   app.use("/api/player", router);
 };

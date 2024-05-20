@@ -2,7 +2,9 @@ const db = require("../models");
 const Request = db.request;
 const Team = db.team;
 const Player = db.player;
-const { Op } = require("sequelize");
+const Post = db.post;
+const User = db.user;
+const { Op, where } = require("sequelize");
 //TODO: add a check for invitation functions to handle team size
 // Send a join request to a team
 const sendJoinRequest = async (req, res) => {
@@ -179,7 +181,7 @@ const respondToTeamInvitation = async (req, res) => {
     // Check if the response is valid
     if (response !== "accepted" && response !== "declined") {
       return res.status(400).json({
-        message: "Invalid response, please specify 'accept' or 'decline'",
+        message: "Invalid response, please specify 'accepted' or 'declined'",
       });
     }
     // Check if the request status is already set
@@ -265,7 +267,232 @@ const filterRequestsByType = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+// need to check for post reservation date in related post...
+// Function to create a new request
+const createPostRequest = async (req, res) => {
+  const { postId } = req.params;
+  const { message } = req.body;
+  const senderId = req.user.id;
 
+  try {
+    const post = await Post.findByPk(postId, {
+      include: {
+        model: Player,
+        as: "player",
+        attributes: ["id", "team_id", "user_id"],
+      },
+    });
+    if (!post) {
+      return res.status(404).send({ message: "Post not found." });
+    }
+
+    const senderPlayer = await Player.findOne({ where: { user_id: senderId } });
+    if (!senderPlayer) {
+      return res.status(404).send({ message: "Sender Player not found." });
+    }
+
+    // Check if the post is open
+    if (post.status !== "open") {
+      return res
+        .status(400)
+        .send({ message: "Post is not open for requests." });
+    }
+    // Checking if the sender is the same as the receiver user
+    if (senderId == post.player.user_id) {
+      return res.status(400).send({
+        message: "You cant send a request to your own post.",
+      });
+    }
+
+    const existingRequest = await Request.findOne({
+      where: { post_id: postId, sender_id: senderId },
+    });
+
+    if (existingRequest) {
+      return res.status(400).send({
+        message: "You have already responded to this post.",
+      });
+    }
+    // Check if sender is from the same team as the post owner
+
+    // Additional check for post type "needEnemyTeam"
+    if (post.type === "needEnemyTeam") {
+      const senderTeam = await Team.findOne({
+        where: { captain_id: senderPlayer.id },
+      });
+      if (!senderTeam) {
+        return res.status(400).send({
+          message: "You must be a team captain to respond to this post.",
+        });
+      }
+      if (senderTeam.id === post.player.team_id) {
+        return res.status(400).send({
+          message: "You cannot send a request for a post from your own team.",
+        });
+      }
+
+      // for post type "needEnemyTeam"
+      const newRequest = await Request.create({
+        post_id: postId,
+        sender_id: senderId,
+        receiver_id: post.player.user_id,
+        team_id: senderTeam.id, // is a must field if post type is "needEnemyTeam"
+        type: post.type,
+        message,
+        status: "pending",
+      });
+
+      return res.status(201).json(newRequest);
+    }
+
+    // For posts type "needPlayer", no additional checks needed
+    const newRequest = await Request.create({
+      post_id: postId,
+      sender_id: senderId,
+      receiver_id: post.player.user_id,
+      type: post.type,
+      message,
+      status: "pending",
+    });
+
+    res.status(201).json(newRequest);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error creating request", error });
+  }
+};
+
+// Respond To Post Request
+// modify the code to take respond as body parameter instead of creating a request thats only for accepting
+const respondToPostRequest = async (req, res) => {
+  const { requestId } = req.params;
+  const { response } = req.body;
+  const userId = req.user.id;
+  if (!["accepted", "declined"].includes(response)) {
+    return res.status(400).send({ message: "Invalid response." });
+  }
+
+  const transaction = await db.sequelize.transaction();
+  try {
+    const request = await Request.findByPk(requestId, { transaction });
+    if (!request || request.status !== "pending") {
+      await transaction.rollback();
+      return res
+        .status(400)
+        .send({ message: "Request not found or already processed." });
+    }
+
+    const post = await Post.findByPk(request.post_id, { transaction });
+    if (!post || post.status !== "open") {
+      await transaction.rollback();
+      return res
+        .status(400)
+        .send({ message: "Post not found or already closed." });
+    }
+    // Check if the current user is the post owner
+    if (request.receiver_id !== userId) {
+      await transaction.rollback();
+      return res.status(403).send({
+        message: "You are not authorized to respond to this request.",
+      });
+    }
+    if (response === "accepted") {
+      request.status = "accepted";
+      await request.save({ transaction });
+
+      post.status = "closed";
+      await post.save({ transaction });
+
+      await Request.update(
+        { status: "declined" },
+        {
+          where: {
+            post_id: request.post_id,
+            id: { [db.Sequelize.Op.ne]: requestId },
+          },
+          transaction,
+        }
+      );
+
+      await transaction.commit();
+      return res
+        .status(200)
+        .send({ message: "Request accepted and post closed." });
+    } else if (response === "declined") {
+      request.status = "declined";
+      await request.save({ transaction });
+
+      await transaction.commit();
+      return res.status(200).send({ message: "Request declined." });
+    }
+  } catch (error) {
+    await transaction.rollback();
+    console.error(error);
+    res.status(500).send({ message: "Error processing request", error });
+  }
+};
+// Get All Requests Sent by a Player
+const getRequestsSentByPlayer = async (req, res) => {
+  const { playerId } = req.params;
+  try {
+    const requests = await Request.findAll({
+      where: { sender_id: playerId },
+      include: [{ model: Post, as: "post" }],
+    });
+    res.status(200).json(requests);
+  } catch (error) {
+    res.status(500).send({ message: "Error fetching requests", error });
+  }
+};
+// Get All Requests Received by a Player
+const getRequestsReceivedByPlayer = async (req, res) => {
+  const { playerId } = req.params;
+  try {
+    const requests = await Request.findAll({
+      where: { receiver_id: playerId },
+      include: [{ model: Post, as: "post" }],
+    });
+    res.status(200).json(requests);
+  } catch (error) {
+    res.status(500).send({ message: "Error fetching requests", error });
+  }
+};
+//  Get Details of a Specific Request
+const getRequestById = async (req, res) => {
+  const { requestId } = req.params;
+  try {
+    const request = await Request.findByPk(requestId, {
+      include: [
+        { model: Post, as: "post" },
+        { model: Player, as: "sender", attributes: ["id", "name"] },
+        { model: Player, as: "receiver", attributes: ["id", "name"] },
+      ],
+    });
+    if (!request) {
+      return res.status(404).send({ message: "Request not found" });
+    }
+    res.status(200).json(request);
+  } catch (error) {
+    res.status(500).send({ message: "Error fetching request", error });
+  }
+};
+// Get All Requests for a Post
+const getRequestsByPost = async (req, res) => {
+  const { postId } = req.params;
+  try {
+    const requests = await Request.findAll({
+      where: { post_id: postId },
+      include: [
+        { model: Player, as: "sender", attributes: ["id", "name"] },
+        { model: Player, as: "receiver", attributes: ["id", "name"] },
+      ],
+    });
+    res.status(200).json(requests);
+  } catch (error) {
+    res.status(500).send({ message: "Error fetching requests", error });
+  }
+};
 module.exports = {
   sendJoinRequest,
   respondToJoinRequest,
@@ -274,4 +501,6 @@ module.exports = {
   getAllSentRequests,
   getAllReceivedRequests,
   filterRequestsByType,
+  createPostRequest,
+  respondToPostRequest,
 };

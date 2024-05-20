@@ -54,7 +54,7 @@ const createTeam = async (req, res) => {
       max_number: maxNumber,
       level, //"Excellent", "Intermediate", "Good", "Beginner"
       captain_id: player.id, // Make the player's ID the captain ID
-      lineup,
+      lineup, // to be deleted
       sport_id,
     });
 

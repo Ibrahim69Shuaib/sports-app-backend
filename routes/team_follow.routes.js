@@ -1,0 +1,34 @@
+module.exports = (app) => {
+  const team_follow = require("../controllers/team_follow.controller.js");
+  var router = require("express").Router();
+  const { verifyToken } = require("../middleware/auth.middleware.js");
+  const checkRolesMiddleware = require("../middleware/check_roles.middleware.js");
+
+  // Follow a team
+  router.post(
+    "/follow",
+    verifyToken,
+    checkRolesMiddleware([1]),
+    team_follow.followTeam
+  );
+
+  // Unfollow a team
+  router.delete(
+    "/unfollow",
+    verifyToken,
+    checkRolesMiddleware([1]),
+    team_follow.unfollowTeam
+  );
+
+  // Get player followed teams
+  router.get(
+    "/followed/:playerId",
+    verifyToken,
+    team_follow.getPlayerFollowedTeams
+  );
+
+  // Get team followers
+  router.get("/followers/:teamId", verifyToken, team_follow.getTeamFollowers);
+
+  app.use("/api/team-follow", router);
+};

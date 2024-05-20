@@ -16,7 +16,16 @@ const followClub = async (req, res) => {
     if (existingFollow) {
       return res.status(400).json({ message: "Club already followed" });
     }
-
+    // Check if the clubId doesn't exist
+    const club = await Club.findByPk(clubId);
+    if (!club) {
+      return res.status(400).json({ message: "Club not found" });
+    }
+    // Check if the playerId doesn't exist
+    const player = await Player.findByPk(playerId);
+    if (!player) {
+      return res.status(400).json({ message: "Player not found" });
+    }
     // Create a new club follow entry
     await ClubFollow.create({ player_id: playerId, club_id: clubId });
 

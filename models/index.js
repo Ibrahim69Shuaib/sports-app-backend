@@ -33,11 +33,14 @@ db.player_lineup = require("./player_lineup.model.js")(sequelize, Sequelize);
 db.reservation = require("./reservation.model.js")(sequelize, Sequelize);
 db.refund_policy = require("./refund_policy.model.js")(sequelize, Sequelize);
 db.utilities = require("./utilities.model.js")(sequelize, Sequelize);
+db.club_rating = require("./club_rating.model.js")(sequelize, Sequelize);
+db.team_follow = require("./team_follow.model.js")(sequelize, Sequelize);
+db.post = require("./post.model.js")(sequelize, Sequelize);
 //db.notification= require("./notification..model.js")(sequelize, Sequelize);
 //db.plan= require ("./plan.model.js")(sequelize, Sequelize);
 //db.subscription= require ("./subscription.model.js")(sequelize,Sequelize);
 //tournaments...
-// maybe club rating
+//team follow
 
 //RelationShips =>
 
@@ -189,13 +192,13 @@ db.transaction.belongsTo(db.reservation, { foreignKey: "reservation_id" });
 db.club.hasOne(db.refund_policy, { foreignKey: "club_id" });
 db.refund_policy.belongsTo(db.club, { foreignKey: "club_id" });
 //-----------------------------------------------------
-//request - post relationship (one to many)
-// db.post.hasMany(db.request, { foreignKey: 'postId', as: 'sentRequests' });
-// db.request.belongsTo(db.post, { foreignKey: 'postId', as: 'post' });
+//club_rating - club relationship (one to many)
+db.club.hasMany(db.club_rating, { foreignKey: "club_id" });
+db.club_rating.belongsTo(db.club, { foreignKey: "club_id" });
 //-----------------------------------------------------
-//request - tournament relationship (one to many)
-// db.tournament.hasMany(db.transaction, { foreignKey: 'tournament_id' });
-// db.transaction.belongsTo(db.tournament, { foreignKey: 'tournament_id' });
+//club_rating - player relationship (one to many)
+db.player.hasMany(db.club_rating, { foreignKey: "player_id" });
+db.club_rating.belongsTo(db.player, { foreignKey: "player_id" });
 //-----------------------------------------------------
 // club - utility relationship (many to many) through club_utility
 db.club.belongsToMany(db.utilities, {
@@ -208,6 +211,30 @@ db.utilities.belongsToMany(db.club, {
   foreignKey: "utilities_id",
   timestamps: false,
 });
+//-----------------------------------------------------
+//player - team_follow relationship (one to many)
+db.player.hasMany(db.team_follow, { foreignKey: "player_id" });
+db.team_follow.belongsTo(db.player, { foreignKey: "player_id" });
+//-----------------------------------------------------
+// team - team_follow relationship (one to many)
+db.team.hasMany(db.team_follow, { foreignKey: "team_id" });
+db.team_follow.belongsTo(db.team, { foreignKey: "team_id" });
+//-----------------------------------------------------
+// Association between Player and Post
+db.player.hasMany(db.post, { foreignKey: "player_id" });
+db.post.belongsTo(db.player, { foreignKey: "player_id" });
+//-----------------------------------------------------
+// Association between Reservation and Post
+db.reservation.hasMany(db.post, { foreignKey: "reservation_id" });
+db.post.belongsTo(db.reservation, { foreignKey: "reservation_id" });
+//-----------------------------------------------------
+//request - post relationship (one to many)
+db.post.hasMany(db.request, { foreignKey: "post_id", as: "sentRequests" });
+db.request.belongsTo(db.post, { foreignKey: "post_id", as: "post" });
+//-----------------------------------------------------
+//request - tournament relationship (one to many)
+// db.tournament.hasMany(db.transaction, { foreignKey: 'tournament_id' });
+// db.transaction.belongsTo(db.tournament, { foreignKey: 'tournament_id' });
 //-----------------------------------------------------
 
 // club - subscription relationship (one to many) one club many subscriptions

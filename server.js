@@ -59,7 +59,10 @@ require("./routes/transaction.routes")(app); // Transaction
 require("./routes/player_lineup.routes")(app); // Lineup
 require("./routes/reservation.routes")(app); // Reservation
 require("./routes/search.routes")(app); // Search
-require("./routes/utilities.routes")(app); // Search
+require("./routes/utilities.routes")(app); // Utilities
+require("./routes/club_rating.routes")(app); // Club-Rating
+require("./routes/team_follow.routes")(app); // Team-Follow
+require("./routes/posts.routes")(app); // Posts
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
