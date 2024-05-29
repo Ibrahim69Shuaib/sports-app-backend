@@ -433,50 +433,50 @@ const respondToPostRequest = async (req, res) => {
   }
 };
 // Get All Requests Sent by a Player
-const getRequestsSentByPlayer = async (req, res) => {
-  const { playerId } = req.params;
-  try {
-    const requests = await Request.findAll({
-      where: { sender_id: playerId },
-      include: [{ model: Post, as: "post" }],
-    });
-    res.status(200).json(requests);
-  } catch (error) {
-    res.status(500).send({ message: "Error fetching requests", error });
-  }
-};
+// const getRequestsSentByPlayer = async (req, res) => {
+//   const { playerId } = req.params;
+//   try {
+//     const requests = await Request.findAll({
+//       where: { sender_id: playerId },
+//       include: [{ model: Post, as: "post" }],
+//     });
+//     res.status(200).json(requests);
+//   } catch (error) {
+//     res.status(500).send({ message: "Error fetching requests", error });
+//   }
+// };
 // Get All Requests Received by a Player
-const getRequestsReceivedByPlayer = async (req, res) => {
-  const { playerId } = req.params;
-  try {
-    const requests = await Request.findAll({
-      where: { receiver_id: playerId },
-      include: [{ model: Post, as: "post" }],
-    });
-    res.status(200).json(requests);
-  } catch (error) {
-    res.status(500).send({ message: "Error fetching requests", error });
-  }
-};
+// const getRequestsReceivedByPlayer = async (req, res) => {
+//   const { playerId } = req.params;
+//   try {
+//     const requests = await Request.findAll({
+//       where: { receiver_id: playerId },
+//       include: [{ model: Post, as: "post" }],
+//     });
+//     res.status(200).json(requests);
+//   } catch (error) {
+//     res.status(500).send({ message: "Error fetching requests", error });
+//   }
+// };
 //  Get Details of a Specific Request
-const getRequestById = async (req, res) => {
-  const { requestId } = req.params;
-  try {
-    const request = await Request.findByPk(requestId, {
-      include: [
-        { model: Post, as: "post" },
-        { model: Player, as: "sender", attributes: ["id", "name"] },
-        { model: Player, as: "receiver", attributes: ["id", "name"] },
-      ],
-    });
-    if (!request) {
-      return res.status(404).send({ message: "Request not found" });
-    }
-    res.status(200).json(request);
-  } catch (error) {
-    res.status(500).send({ message: "Error fetching request", error });
-  }
-};
+// const getRequestById = async (req, res) => {
+//   const { requestId } = req.params;
+//   try {
+//     const request = await Request.findByPk(requestId, {
+//       include: [
+//         { model: Post, as: "post" },
+//         { model: Player, as: "sender", attributes: ["id", "name"] },
+//         { model: Player, as: "receiver", attributes: ["id", "name"] },
+//       ],
+//     });
+//     if (!request) {
+//       return res.status(404).send({ message: "Request not found" });
+//     }
+//     res.status(200).json(request);
+//   } catch (error) {
+//     res.status(500).send({ message: "Error fetching request", error });
+//   }
+// };
 // Get All Requests for a Post
 const getRequestsByPost = async (req, res) => {
   const { postId } = req.params;
@@ -484,8 +484,8 @@ const getRequestsByPost = async (req, res) => {
     const requests = await Request.findAll({
       where: { post_id: postId },
       include: [
-        { model: Player, as: "sender", attributes: ["id", "name"] },
-        { model: Player, as: "receiver", attributes: ["id", "name"] },
+        { model: User, as: "sender" },
+        { model: User, as: "receiver" },
       ],
     });
     res.status(200).json(requests);
@@ -503,4 +503,5 @@ module.exports = {
   filterRequestsByType,
   createPostRequest,
   respondToPostRequest,
+  getRequestsByPost,
 };

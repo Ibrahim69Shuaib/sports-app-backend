@@ -52,7 +52,8 @@ module.exports = (app) => {
     checkRolesMiddleware([1]),
     request.respondToPostRequest
   );
-  // router.get("/received/:postId", verifyToken, request.getRequestsByPost); //type : ENUM[joinTeam,inviteToTeam,joinTournament,joinPost,enemyTeam]
+  // Get All Requests for a Post
+  router.get("/post/:postId", verifyToken, request.getRequestsByPost);
 
   app.use("/api/request", router);
 };

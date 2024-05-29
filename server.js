@@ -7,6 +7,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 require("./services/maintenanceScheduler"); // field maintenance scheduler cron
 require("./services/reservationScheduler"); // reservation status scheduler cron
+require("./services/subscriptionScheduler"); // subscription recurring payment + status scheduler cron
 
 async function initialize() {
   console.log(`Checking database connection...`);
@@ -63,6 +64,8 @@ require("./routes/utilities.routes")(app); // Utilities
 require("./routes/club_rating.routes")(app); // Club-Rating
 require("./routes/team_follow.routes")(app); // Team-Follow
 require("./routes/posts.routes")(app); // Posts
+require("./routes/plan.routes")(app); // Plans
+require("./routes/subscription.routes")(app); // Subscriptions
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

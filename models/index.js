@@ -36,11 +36,10 @@ db.utilities = require("./utilities.model.js")(sequelize, Sequelize);
 db.club_rating = require("./club_rating.model.js")(sequelize, Sequelize);
 db.team_follow = require("./team_follow.model.js")(sequelize, Sequelize);
 db.post = require("./post.model.js")(sequelize, Sequelize);
+db.plan = require("./plan.model.js")(sequelize, Sequelize);
+db.subscription = require("./subscription.model.js")(sequelize, Sequelize);
 //db.notification= require("./notification..model.js")(sequelize, Sequelize);
-//db.plan= require ("./plan.model.js")(sequelize, Sequelize);
-//db.subscription= require ("./subscription.model.js")(sequelize,Sequelize);
 //tournaments...
-//team follow
 
 //RelationShips =>
 
@@ -236,11 +235,11 @@ db.request.belongsTo(db.post, { foreignKey: "post_id", as: "post" });
 // db.tournament.hasMany(db.transaction, { foreignKey: 'tournament_id' });
 // db.transaction.belongsTo(db.tournament, { foreignKey: 'tournament_id' });
 //-----------------------------------------------------
-
 // club - subscription relationship (one to many) one club many subscriptions
-
+db.club.hasMany(db.subscription, { foreignKey: "club_id" });
+db.subscription.belongsTo(db.club, { foreignKey: "club_id" });
 //-----------------------------------------------------
-
 // subscription - plan relationship (one to many) one plan many subscriptions
-
+db.plan.hasMany(db.subscription, { foreignKey: "plan_id" });
+db.subscription.belongsTo(db.plan, { foreignKey: "plan_id" });
 module.exports = db;

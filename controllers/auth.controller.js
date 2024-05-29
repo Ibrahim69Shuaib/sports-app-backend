@@ -86,6 +86,15 @@ const register = async (req, res) => {
     if (existingUserWithPhoneNumber) {
       return res.status(400).json({ message: "Phone number already taken" });
     }
+    // Check if an admin user already exists
+    if (role_id === 3) {
+      const existingAdmin = await User.findOne({ where: { role_id: 3 } });
+      if (existingAdmin) {
+        return res
+          .status(400)
+          .json({ message: "An admin user already exists" });
+      }
+    }
     // Hash password before saving
     const hashedPassword = await bcrypt.hash(password, 10);
 
