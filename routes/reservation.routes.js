@@ -72,6 +72,12 @@ module.exports = (app) => {
     checkRolesMiddleware([2]),
     club_reservation.cancelReservation
   );
+  // check availability
+  router.get(
+    "/availability/:durationId",
+    verifyToken,
+    player_reservation.checkFieldAvailability
+  );
 
   app.use("/api/reservation", router);
 };

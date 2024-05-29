@@ -7,7 +7,13 @@ const Wallet = db.wallet;
 const Transaction = db.transaction;
 const Player = db.player;
 const Club = db.club;
-const { addDays, isBefore, parseISO, isWithinInterval } = require("date-fns");
+const {
+  startOfDay,
+  addDays,
+  isBefore,
+  parseISO,
+  isWithinInterval,
+} = require("date-fns");
 
 // Helper function to check if the field is already booked
 const isFieldAvailable = async (durationId, date) => {
@@ -44,6 +50,33 @@ async function isTransferSuccessful(playerWallet, clubWallet, price, t) {
   await clubWallet.save({ transaction: t });
 
   return true; // Funds transfer successful
+}
+
+// Function to get field availability for a specified number of days
+async function checkFieldAvailability(req, res) {
+  const { durationId } = req.params;
+  const days = parseInt(req.query.days) || 30; // Read days from query params, default to 30 if not provided
+  const today = startOfDay(new Date());
+  const availability = [];
+
+  try {
+    for (let i = 0; i < days; i++) {
+      const checkDate = startOfDay(addDays(today, i))
+        .toISOString()
+        .split("T")[0]; // Ensure DATEONLY format
+      const isAvailable = await isFieldAvailable(durationId, checkDate);
+      availability.push({
+        date: checkDate,
+        isAvailable,
+      });
+    }
+    res.status(200).json(availability);
+  } catch (error) {
+    console.error("Error checking field availability:", error);
+    res.status(500).json({
+      message: "Failed to check field availability due to an internal error.",
+    });
+  }
 }
 // Create a new  player reservation
 async function createPlayerReservation(req, res) {
@@ -182,4 +215,4 @@ async function createPlayerReservation(req, res) {
     });
   }
 }
-module.exports = { createPlayerReservation };
+module.exports = { createPlayerReservation, checkFieldAvailability };
