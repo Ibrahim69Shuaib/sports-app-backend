@@ -41,6 +41,10 @@ module.exports = (app) => {
   router.get("/by-user/:userId", verifyToken, team.getTeamByUserId);
   // get team by player id
   router.get("/by-player/:playerId", verifyToken, team.getTeamByPlayerId);
+  // get current team members
+  router.get("/current-members", verifyToken, team.currentTeamMembers);
+  // get team members by team id
+  router.get("/team-members/:teamId", verifyToken, team.getTeamMembers);
 
   app.use("/api/team", router);
 };

@@ -390,7 +390,48 @@ const transferCaptainRole = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
+const currentTeamMembers = async (req, res) => {
+  const userId = req.user.id;
+  try {
+    const currentPlayer = await Player.findOne({ where: { user_id: userId } });
+    if (!currentPlayer) {
+      return res.status(400).json({ message: "Player not found" });
+    }
+    const currentTeam = await Team.findByPk(currentPlayer.team_id);
+    if (!currentTeam) {
+      return res.status(400).json({ message: "Team not found" });
+    }
+    const teamMembers = await Player.findAll({
+      where: { team_id: currentTeam.id },
+    });
+    if (!teamMembers) {
+      return res.status(400).json({ message: "Team members not found" });
+    }
+    res.status(200).json(teamMembers);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+const getTeamMembers = async (req, res) => {
+  const teamId = req.params.teamId;
+  try {
+    const team = await Team.findByPk(teamId);
+    if (!team) {
+      return res.status(400).json({ message: "Team not found" });
+    }
+    const teamMembers = await Player.findAll({
+      where: { team_id: team.id },
+    });
+    if (!teamMembers) {
+      return res.status(400).json({ message: "Team members not found" });
+    }
+    res.status(200).json(teamMembers);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 module.exports = {
   createTeam,
   leaveTeam,
@@ -403,4 +444,6 @@ module.exports = {
   getTeamByUserId,
   getTeamByPlayerId,
   transferCaptainRole,
+  currentTeamMembers,
+  getTeamMembers,
 };
