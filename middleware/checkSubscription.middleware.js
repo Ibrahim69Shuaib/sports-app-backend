@@ -1,4 +1,4 @@
-// middleware/checkSubscription.js
+// TODO: NEEDS TESTING
 const db = require("../models");
 const Subscription = db.subscription;
 const Club = db.club;

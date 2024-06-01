@@ -96,10 +96,25 @@ const getTeamFollowers = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+// get followers count for a player
+const getFollowersCount = async (req, res) => {
+  try {
+    const { teamId } = req.params;
 
+    const followersCount = await TeamFollow.count({
+      where: { team_id: teamId },
+    });
+
+    res.status(200).json({ followersCount });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 module.exports = {
   followTeam,
   unfollowTeam,
   getPlayerFollowedTeams,
   getTeamFollowers,
+  getFollowersCount,
 };

@@ -33,6 +33,12 @@ module.exports = (app) => {
     verifyToken,
     club_follow.getClubFollowers
   );
+  // Get club followers count
+  router.get(
+    "/followers-count/:clubId",
+    verifyToken,
+    club_follow.getFollowersCount
+  );
 
   app.use("/api/club-follow", router);
 };

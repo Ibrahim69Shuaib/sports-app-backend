@@ -29,6 +29,12 @@ module.exports = (app) => {
 
   // Get team followers
   router.get("/followers/:teamId", verifyToken, team_follow.getTeamFollowers);
+  // Get team followers count
+  router.get(
+    "/followers-count/:teamId",
+    verifyToken,
+    team_follow.getFollowersCount
+  );
 
   app.use("/api/team-follow", router);
 };
