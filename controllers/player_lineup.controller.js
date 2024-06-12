@@ -90,7 +90,7 @@ const updatePlayerInLineup = async (req, res) => {
   try {
     const userId = req.user.id;
     const { player_lineupId } = req.params;
-    const { positionId, jerseyNumber, x, y } = req.body;
+    const { positionId, jerseyNumber, x, y, isCaptain } = req.body;
 
     // Find the player with the user ID
     const player = await Player.findOne({
@@ -131,6 +131,7 @@ const updatePlayerInLineup = async (req, res) => {
       jerseyNumber,
       x,
       y,
+      isCaptain,
     });
 
     res.send(playerLineup);

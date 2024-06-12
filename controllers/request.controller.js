@@ -4,6 +4,7 @@ const Team = db.team;
 const Player = db.player;
 const Post = db.post;
 const User = db.user;
+const player_lineup = db.player_lineup;
 const { Op, where } = require("sequelize");
 //TODO: add a check for invitation functions to handle team size
 // Send a join request to a team
@@ -110,6 +111,25 @@ const respondToJoinRequest = async (req, res) => {
         { where: { user_id: request.sender_id } } // id of the player that sent the request
       );
     }
+    // add here the code for adding the player to the team lineup
+    const senderPlayer = await Player.findOne({
+      where: { user_id: request.sender_id },
+    });
+    if (!senderPlayer) {
+      return res.status(404).json({ message: "Sender player not found" });
+    }
+    // check if there is an existing lineup for the player in the team
+    const existingPlayerInLineup = await player_lineup.findOne({
+      where: { team_id: request.team_id, player_id: senderPlayer.id },
+    });
+    if (!existingPlayerInLineup) {
+      await player_lineup.create({
+        team_id: request.team_id,
+        player_id: senderPlayer.id,
+        x: 0,
+        y: 0,
+      });
+    }
 
     res
       .status(200)
@@ -165,6 +185,7 @@ const sendTeamInvitation = async (req, res) => {
 };
 // invite logic is "fucked up"
 // Respond to a team invitation FIXME: not working "Team invitation not found"
+//TODO: ADD LOGIC TO ADD THE PLAYER TO THE TEAM LINEUP WHEN ACCEPTED
 const respondToTeamInvitation = async (req, res) => {
   try {
     const { requestId, response } = req.body;
@@ -215,7 +236,24 @@ const respondToTeamInvitation = async (req, res) => {
         { where: { user_id: userId } }
       );
     }
-
+    const invitedPlayer = await Player.findOne({
+      where: { user_id: userId },
+    });
+    if (!invitedPlayer) {
+      return res.status(404).json({ message: "Sender player not found" });
+    }
+    // check if there is an existing lineup for the player in the team
+    const existingPlayerInLineup = await player_lineup.findOne({
+      where: { team_id: request.team_id, player_id: invitedPlayer.id },
+    });
+    if (!existingPlayerInLineup) {
+      await player_lineup.create({
+        team_id: request.team_id,
+        player_id: invitedPlayer.id,
+        x: 0,
+        y: 0,
+      });
+    }
     res
       .status(200)
       .json({ message: "Response to team invitation updated successfully" });

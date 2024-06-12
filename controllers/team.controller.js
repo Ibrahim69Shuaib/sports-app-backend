@@ -15,6 +15,7 @@ const db = require("../models");
 const Team = db.team;
 const Player = db.player;
 const Sequelize = require("sequelize");
+const player_lineup = db.player_lineup;
 
 // Create a new team
 const createTeam = async (req, res) => {
@@ -60,7 +61,14 @@ const createTeam = async (req, res) => {
 
     // Update the player's team_id
     await player.update({ team_id: team.id });
-
+    // add the player (team captain) to the team lineup
+    await player_lineup.create({
+      team_id: team.id,
+      player_id: player.id,
+      isCaptain: true,
+      x: 0,
+      y: 0,
+    });
     res.status(201).json({ message: "Team created successfully", team });
   } catch (error) {
     if (error instanceof Sequelize.UniqueConstraintError) {
@@ -112,11 +120,20 @@ const leaveTeam = async (req, res) => {
         await team.update({ captain_id: newCaptain.id });
       }
     }
-
-    // Remove the player from the team
-    await player.update({ team_id: null });
-
-    res.status(200).json({ message: "Player left the team successfully" });
+    // delete the player lineup from the team
+    const currentLineup = await player_lineup.findOne({
+      where: { team_id: player.team_id, player_id: player.id },
+    });
+    if (currentLineup) {
+      await player_lineup.destroy({
+        where: { id: currentLineup.id },
+      });
+      // Remove the player from the team
+      await player.update({ team_id: null });
+    }
+    await res
+      .status(200)
+      .json({ message: "Player left the team successfully" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal Server Error" });
@@ -215,7 +232,13 @@ const kickPlayer = async (req, res) => {
     if (!playerToKick || playerToKick.team_id !== team.id) {
       return res.status(400).json({ message: "Player not found in the team" });
     }
-
+    // Delete the player team lineup
+    const playerToKickTeamLineup = await player_lineup.findOne({
+      where: { team_id: playerToKick.team_id, player_id: playerToKick.id },
+    });
+    if (playerToKickTeamLineup) {
+      await player_lineup.destroy({ where: { id: playerToKickTeamLineup.id } });
+    }
     // Remove the player from the team
     await playerToKick.update({ team_id: null });
 
