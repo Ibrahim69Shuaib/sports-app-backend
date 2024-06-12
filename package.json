@@ -12,6 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "brackets-manager": "^1.6.4",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
     "date-fns": "^3.6.0",
