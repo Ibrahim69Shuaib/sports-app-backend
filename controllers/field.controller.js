@@ -286,7 +286,9 @@ const setFieldMaintenanceStatus = async (req, res) => {
 // Get all fields
 const getAllFields = async (req, res) => {
   try {
-    const fields = await Field.findAll();
+    const fields = await Field.findAll({
+      include: [{ model: Sport }],
+    });
     res.status(200).json(fields);
   } catch (error) {
     console.error(error);
