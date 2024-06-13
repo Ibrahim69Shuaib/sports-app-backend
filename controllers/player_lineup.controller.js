@@ -207,11 +207,7 @@ const getTeamLineup = async (req, res) => {
           model: Player,
           as: "player",
           attributes: ["name", "pic"],
-        },
-        {
-          model: Position,
-          as: "position",
-          attributes: ["name", "key"],
+          include: [{ model: Position }],
         },
       ],
     });

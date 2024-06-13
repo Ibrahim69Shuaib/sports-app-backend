@@ -35,6 +35,12 @@ module.exports = (app) => {
     verifyToken,
     team_follow.getFollowersCount
   );
+  // check if team is followed
+  router.get(
+    "/isFollowed/:teamId",
+    verifyToken,
+    team_follow.checkTeamFollowStatus
+  );
 
   app.use("/api/team-follow", router);
 };

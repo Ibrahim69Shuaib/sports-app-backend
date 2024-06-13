@@ -74,12 +74,19 @@ module.exports = (app) => {
     checkRolesMiddleware([1]),
     follower.getMutualFollowers
   );
-  // check follower status
+  // check follower status (blocked or not)
   router.get(
     "/status/:playerId",
     verifyToken,
     checkRolesMiddleware([1]),
     follower.checkFollowerStatus
+  );
+  // check follower status
+  router.get(
+    "/isFollowed/:playerId",
+    verifyToken,
+    checkRolesMiddleware([1]),
+    follower.checkFollowStatus
   );
 
   app.use("/api/follow", router);

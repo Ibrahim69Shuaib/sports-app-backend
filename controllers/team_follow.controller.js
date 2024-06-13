@@ -111,10 +111,36 @@ const getFollowersCount = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+// check if team is followed
+async function checkTeamFollowStatus(req, res) {
+  const { teamId } = req.params;
+  const userId = req.user.id;
+
+  try {
+    const player = await Player.findOne({ where: { user_id: userId } });
+    const player_id = player.id;
+    const follow = await TeamFollow.findOne({
+      where: {
+        player_id: player_id,
+        team_id: teamId,
+      },
+    });
+
+    if (follow) {
+      res.status(200).json({ isFollowing: true });
+    } else {
+      res.status(200).json({ isFollowing: false });
+    }
+  } catch (error) {
+    console.error("Error checking follow status:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
 module.exports = {
   followTeam,
   unfollowTeam,
   getPlayerFollowedTeams,
   getTeamFollowers,
   getFollowersCount,
+  checkTeamFollowStatus,
 };

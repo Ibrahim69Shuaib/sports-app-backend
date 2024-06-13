@@ -297,7 +297,30 @@ const checkFollowerStatus = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+async function checkFollowStatus(req, res) {
+  const { playerId } = req.params;
+  const userId = req.user.id;
 
+  try {
+    const player = await Player.findOne({ where: { user_id: userId } });
+    const player_id = player.id;
+    const follow = await Follower.findOne({
+      where: {
+        player_id: playerId,
+        follower_id: player_id,
+      },
+    });
+
+    if (follow) {
+      res.status(200).json({ isFollowing: true });
+    } else {
+      res.status(200).json({ isFollowing: false });
+    }
+  } catch (error) {
+    console.error("Error checking follow status:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
 module.exports = {
   followPlayer,
   unfollowPlayer,
@@ -310,4 +333,5 @@ module.exports = {
   getBlockedPlayers,
   getMutualFollowers,
   checkFollowerStatus,
+  checkFollowStatus,
 };

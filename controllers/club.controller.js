@@ -3,6 +3,7 @@
 const db = require("../models");
 const Club = db.club;
 const RefundPolicy = db.refund_policy;
+const Utilities = db.utilities;
 const { Op } = require("sequelize");
 const Sequelize = require("sequelize");
 
@@ -111,7 +112,10 @@ const getClubForCurrentUser = async (req, res) => {
     const userId = req.user.id; // Assuming user information is available in req.user
 
     // Find the club for the current user
-    const club = await Club.findOne({ where: { user_id: userId } });
+    const club = await Club.findOne({
+      where: { user_id: userId },
+      include: [{ model: RefundPolicy }, { model: Utilities }],
+    });
 
     if (!club) {
       return res.status(404).json({ message: "Club not found" });
