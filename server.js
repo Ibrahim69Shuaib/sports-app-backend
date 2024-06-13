@@ -67,7 +67,7 @@ require("./routes/team_follow.routes")(app); // Team-Follow
 require("./routes/posts.routes")(app); // Posts
 require("./routes/plan.routes")(app); // Plans
 require("./routes/subscription.routes")(app); // Subscriptions
-require("./routes/tournament.routes")(app); // Tournaments
+// require("./routes/tournament.routes")(app); // Tournaments
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
