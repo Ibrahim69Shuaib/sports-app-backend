@@ -295,6 +295,24 @@ const getAllFields = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+// Get all fields for current club
+const getCurrentClubFields = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const currentClub = await Club.findOne({ where: { user_id: userId } });
+    if (!currentClub) {
+      return res.status(404).json({ message: "Club not found" });
+    }
+    const fields = await Field.findAll({
+      where: { club_id: currentClub.id },
+      include: [{ model: Sport }],
+    });
+    res.status(200).json(fields);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
 // Get fields by size
 const getFieldsBySize = async (req, res) => {
@@ -386,4 +404,5 @@ module.exports = {
   getFieldsByDuration,
   getFieldsByClub,
   getFieldsBySport,
+  getCurrentClubFields,
 };

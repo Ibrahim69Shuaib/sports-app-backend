@@ -41,6 +41,13 @@ module.exports = (app) => {
   );
   // get all fields
   router.get("/all", verifyToken, field.getAllFields);
+  // get all fields for current club
+  router.get(
+    "/all-current",
+    verifyToken,
+    checkRolesMiddleware([2]),
+    field.getCurrentClubFields
+  );
   // get fields by club id
   router.get("/by-club", verifyToken, field.getFieldsByClub);
   // get fields by duration {minDuration, maxDuration} in request query
