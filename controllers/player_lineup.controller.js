@@ -10,7 +10,7 @@ const Position = db.position;
 const addPlayerToLineup = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { playerId, positionId, jerseyNumber, x, y } = req.body;
+    const { playerId, x, y, isBenched } = req.body;
     let isCaptain; // Declare isCaptain variable here
 
     // Find the player with the user ID
@@ -46,14 +46,7 @@ const addPlayerToLineup = async (req, res) => {
     isCaptain = requestedPlayer.id === team.captain_id;
 
     // Validate required fields
-    if (
-      !player.team_id ||
-      !playerId ||
-      !positionId ||
-      !jerseyNumber ||
-      !x ||
-      !y
-    ) {
+    if (!player.team_id || !playerId || !x || !y) {
       return res.status(400).send({ message: "All fields are required." });
     }
 
@@ -71,11 +64,10 @@ const addPlayerToLineup = async (req, res) => {
     const playerInLineup = await player_lineup.create({
       team_id: player.team_id,
       player_id: playerId,
-      position_id: positionId,
-      jerseyNumber,
       x,
       y,
       isCaptain,
+      isBenched,
     });
 
     res.send(playerInLineup);
@@ -90,7 +82,7 @@ const updatePlayerInLineup = async (req, res) => {
   try {
     const userId = req.user.id;
     const { player_lineupId } = req.params;
-    const { positionId, jerseyNumber, x, y, isCaptain } = req.body;
+    const { x, y, isCaptain, isBenched } = req.body;
 
     // Find the player with the user ID
     const player = await Player.findOne({
@@ -127,11 +119,10 @@ const updatePlayerInLineup = async (req, res) => {
     }
     // Update player in lineup
     await playerLineup.update({
-      position_id: positionId,
-      jerseyNumber,
       x,
       y,
       isCaptain,
+      isBenched,
     });
 
     res.send(playerLineup);

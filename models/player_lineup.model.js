@@ -14,6 +14,10 @@ module.exports = (sequelize, Sequelize) => {
         type: Sequelize.BOOLEAN,
         defaultValue: false,
       },
+      isBenched: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: true,
+      },
     },
     {
       timestamps: false,
