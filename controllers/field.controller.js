@@ -10,6 +10,7 @@ const Duration = db.duration;
 const Player = db.player;
 const User = db.user;
 const { Op } = require("sequelize");
+const { addDays, isBefore, parseISO, isWithinInterval } = require("date-fns");
 //TODO: when putting field under maintenance find reservations during maintenance date and full refund them creating 2 transactions one for the club and one for the reservation owner , but club reservations cannot be refunded , it has to be canceled by the club and use sequelize transactions to encapsulate it.
 // find the all durations of that field => find all reservations with that duration => compare reservations date with start and end of field maintenance , if there is a reservation during that maintenance then fully refund it by creating transactions and deducting its full price from the club frozen wallet and then adding balance to the wallet of the reservation owner and change the reservation status to canceled and is_refunded to true.
 // Create a new field
@@ -31,6 +32,15 @@ const createField = async (req, res) => {
     const club = await Club.findOne({ where: { user_id: req.user.id } });
     if (!club) {
       return res.status(404).json({ message: "Club not found" });
+    }
+    const sport = await Sport.findOne({ where: { sport_id: sport_id } });
+    if (!sport) {
+      return res.status(404).json({ message: "Sport not found" });
+    }
+    if (isBefore(parseISO(end_date), parseISO(start_date))) {
+      return res
+        .status(404)
+        .json({ message: "End date can't be before Start date." });
     }
     const field = await Field.create({
       size,
@@ -144,7 +154,11 @@ const putFieldUnderMaintenance = async (req, res) => {
     if (field.club_id !== club.id) {
       throw new Error("Unauthorized operation");
     }
-
+    if (isBefore(parseISO(end_date), parseISO(start_date))) {
+      return res
+        .status(404)
+        .json({ message: "End date can't be before Start date." });
+    }
     // Update field to under maintenance
     await field.update(
       {
