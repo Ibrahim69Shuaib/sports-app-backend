@@ -384,6 +384,7 @@ const getFieldsByClub = async (req, res) => {
     const clubId = req.query.clubId;
     const fields = await Field.findAll({
       where: { club_id: clubId },
+      include: [{ model: Sport }],
     });
     res.status(200).json(fields);
   } catch (error) {
