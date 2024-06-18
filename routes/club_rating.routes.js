@@ -21,6 +21,12 @@ module.exports = (app) => {
     verifyToken,
     club_rating.getRatingsByPlayer
   );
+  // Get ratings of a player
+  router.get(
+    "/current/rate/:clubId",
+    verifyToken,
+    club_rating.getCurrentRating
+  );
   // List top rated Clubs
   //   router.get("/top-rated", verifyToken, club_rating.listTopRatedClubs);
 

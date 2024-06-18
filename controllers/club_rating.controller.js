@@ -1,7 +1,7 @@
 const db = require("../models");
 const ClubRating = db.club_rating;
 const Club = db.club;
-
+const Player = db.player;
 // Function to add or update a rating
 //TODO: might need validation to the player making the rating + find the player if it exists
 async function addOrUpdateRating(req, res) {
@@ -68,6 +68,29 @@ async function getRatingsByPlayer(req, res) {
     res.status(500).send({ message: "Error retrieving player's ratings" });
   }
 }
+
+async function getCurrentRating(req, res) {
+  const userId = req.user.id;
+  const { clubId } = req.params;
+  try {
+    const player = await Player.findOne({ where: { user_id: userId } });
+    if (!player) res.status(404).send({ message: "Player not found" });
+    const club = await Club.findByPk(clubId);
+    if (!club) {
+      res.status(404).send({ message: "Club not found" });
+    }
+    const rating = await ClubRating.findOne({
+      where: { club_id: club.id, player_id: player.id },
+    });
+    if (rating) {
+      res.status(200).json(rating);
+    } else {
+      res.status(200).json({ rate: false });
+    }
+  } catch (error) {
+    res.status(500).send({ message: "Error retrieving player's ratings" });
+  }
+}
 //FIXME: not working
 // async function listTopRatedClubs(req, res) {
 //   try {
@@ -110,5 +133,6 @@ module.exports = {
   addOrUpdateRating,
   getAverageRating,
   getRatingsByPlayer,
+  getCurrentRating,
   //   listTopRatedClubs,
 };
