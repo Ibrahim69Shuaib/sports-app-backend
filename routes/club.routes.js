@@ -59,6 +59,13 @@ module.exports = (app) => {
   );
   // Get Refund Policy by clubId
   router.get("/refund-policy/:clubId", verifyToken, club.getRefundPolicy);
+  // Check Club Profile for current user if it exists
+  router.get(
+    "/check",
+    verifyToken,
+    checkRolesMiddleware([2]),
+    club.isClubProfile
+  );
 
   app.use("/api/club", router);
 };

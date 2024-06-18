@@ -231,11 +231,33 @@ async function getSubscriptionStatistics(req, res) {
     res.status(500).json({ message: "Error fetching subscription statistics" });
   }
 }
+// check if there is an active subscription for current club (return true / false)
+const activeSubscription = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const club = await Club.findOne({ where: { user_id: userId } });
+    if (!club) {
+      return res.status(404).json({ message: "Club not found" });
+    }
+    const activeSubscription = await Subscription.findOne({
+      where: {
+        club_id: club.id,
+        status: "active",
+      },
+    });
 
+    if (activeSubscription) {
+      return res.status(200).json({ ActiveSubscription: true });
+    } else {
+      return res.status(200).json({ ActiveSubscription: false });
+    }
+  } catch (error) {}
+};
 module.exports = {
   subscribeToPlan,
   cancelSubscription,
   getSubscriptionStatistics,
   getAllSubscriptions,
   getCurrentActiveSubscription,
+  activeSubscription,
 };

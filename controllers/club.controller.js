@@ -376,6 +376,21 @@ const deleteRefundPolicy = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+// a request to check if the club has setup his profile or not
+const isClubProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const club = await Club.findOne({ where: { user_id: userId } });
+    if (club) {
+      res.status(200).json({ isClubProfile: true });
+    } else {
+      res.status(200).json({ isClubProfile: false });
+    }
+  } catch (error) {
+    console.error("Error checking club profile status:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 module.exports = {
   createClub,
   updateClub,
@@ -390,4 +405,5 @@ module.exports = {
   updateRefundPolicy,
   getRefundPolicy,
   deleteRefundPolicy,
+  isClubProfile,
 };

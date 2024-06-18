@@ -37,6 +37,13 @@ module.exports = (app) => {
     checkRolesMiddleware([3]),
     subscription.getSubscriptionStatistics
   );
+  // check for active subscriptions (true / false)
+  router.get(
+    "/check",
+    verifyToken,
+    checkRolesMiddleware([2]),
+    subscription.activeSubscription
+  );
 
   app.use("/api/subscription", router);
 };
