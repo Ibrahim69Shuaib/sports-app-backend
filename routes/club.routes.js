@@ -66,6 +66,28 @@ module.exports = (app) => {
     checkRolesMiddleware([2]),
     club.isClubProfile
   );
+  // get current club most booked field
+  router.get("/top-field/:clubId", verifyToken, club.getMostBookedField);
+  // get current club most booked time
+  router.get("/top-time/:clubId", verifyToken, club.getMostBookedDuration);
+  // get current club most booked day
+  router.get("/top-day/:clubId", verifyToken, club.getMostBookedDay);
+  // get current club reservations revenue for the current month
+  router.get(
+    "/reservations-revenue/:clubId",
+    verifyToken,
+    club.getCurrentMonthReservationsRevenue
+  );
+  // get current club tournaments revenue for this month
+  router.get(
+    "/tournaments-revenue/:clubId",
+    verifyToken,
+    club.getCurrentMonthTournamentsRevenue
+  );
+  // get current club total revenue for this month only
+  router.get("/top-day/:clubId", verifyToken, club.getMostBookedDay);
+  // get current club total revenue
+  router.get("/top-day/:clubId", verifyToken, club.getMostBookedDay);
 
   app.use("/api/club", router);
 };

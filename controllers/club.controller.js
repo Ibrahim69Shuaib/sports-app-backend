@@ -6,6 +6,11 @@ const RefundPolicy = db.refund_policy;
 const Utilities = db.utilities;
 const { Op } = require("sequelize");
 const Sequelize = require("sequelize");
+const Reservation = db.reservation;
+const Field = db.field;
+const Duration = db.duration;
+const Tournament = db.tournament;
+const Decimal = require("decimal.js");
 
 const createClub = async (req, res) => {
   try {
@@ -391,6 +396,268 @@ const isClubProfile = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+// get current club most booked field
+async function getMostBookedField(req, res) {
+  const { clubId } = req.params;
+
+  try {
+    if (!clubId) {
+      return res.status(404).json({ message: "Club id is required" });
+    }
+    const mostBookedField = await Reservation.findAll({
+      include: [
+        {
+          model: Duration,
+          include: [
+            {
+              model: Field,
+              where: { club_id: clubId },
+              attributes: ["id", "description"],
+            },
+          ],
+          attributes: [],
+        },
+      ],
+      attributes: [
+        [Sequelize.col("Duration.Field.id"), "fieldId"],
+        [Sequelize.col("Duration.Field.description"), "fieldDescription"],
+        [
+          Sequelize.fn("COUNT", Sequelize.col("Duration.Field.id")),
+          "booking_count",
+        ],
+      ],
+      group: ["Duration.Field.id", "Duration.Field.description"],
+      order: [[Sequelize.literal("booking_count"), "DESC"]],
+      limit: 1,
+    });
+
+    if (mostBookedField.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No bookings found for this club." });
+    }
+    const field = {
+      id: mostBookedField[0].getDataValue("fieldId"),
+      description: mostBookedField[0].getDataValue("fieldDescription"),
+      booking_count: mostBookedField[0].getDataValue("booking_count"),
+    };
+    res.status(200).json(field);
+  } catch (error) {
+    console.error("Error fetching most booked field:", error);
+    res.status(500).json({ message: "Failed to fetch most booked field." });
+  }
+}
+
+// get current club most booked duration (time)
+async function getMostBookedDuration(req, res) {
+  const { clubId } = req.params;
+
+  try {
+    if (!clubId) {
+      return res.status(404).json({ message: "Club id is required" });
+    }
+    const mostBookedDuration = await Reservation.findAll({
+      include: [
+        {
+          model: Duration,
+          include: [
+            {
+              model: Field,
+              where: { club_id: clubId },
+            },
+          ],
+          attributes: ["id", "time"],
+        },
+      ],
+      attributes: [
+        [Sequelize.col("Duration.id"), "durationId"],
+        [Sequelize.col("Duration.time"), "time"],
+
+        [Sequelize.fn("COUNT", Sequelize.col("Duration.id")), "booking_count"],
+      ],
+      group: ["Duration.id", "Duration.time"],
+      order: [[Sequelize.literal("booking_count"), "DESC"]],
+      limit: 1,
+    });
+
+    if (mostBookedDuration.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No bookings found for this club." });
+    }
+
+    const duration = {
+      id: mostBookedDuration[0].getDataValue("durationId"),
+      time: mostBookedDuration[0].getDataValue("time"),
+      booking_count: mostBookedDuration[0].getDataValue("booking_count"),
+    };
+
+    res.status(200).json(duration);
+  } catch (error) {
+    console.error("Error fetching most booked duration:", error);
+    res.status(500).json({ message: "Failed to fetch most booked duration." });
+  }
+}
+
+// get current club most booked days
+async function getMostBookedDay(req, res) {
+  const { clubId } = req.params;
+
+  try {
+    if (!clubId) {
+      return res.status(404).json({ message: "Club id is required" });
+    }
+    // Find all reservations related to the club
+    const reservations = await Reservation.findAll({
+      include: [
+        {
+          model: Duration,
+          include: [
+            {
+              model: Field,
+              where: { club_id: clubId },
+              attributes: [], // Do not select Field attributes to simplify grouping
+            },
+          ],
+          attributes: [], // Do not select Duration attributes to simplify grouping
+        },
+      ],
+      attributes: [
+        [
+          Sequelize.fn("DAYOFWEEK", Sequelize.col("Reservation.date")),
+          "dayOfWeek",
+        ],
+        [
+          Sequelize.fn("COUNT", Sequelize.col("Reservation.id")),
+          "booking_count",
+        ],
+      ],
+      group: ["dayOfWeek"],
+      order: [[Sequelize.literal("booking_count"), "DESC"]],
+      limit: 1,
+    });
+
+    if (reservations.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No bookings found for this club." });
+    }
+
+    const dayOfWeekMap = {
+      1: "Sunday",
+      2: "Monday",
+      3: "Tuesday",
+      4: "Wednesday",
+      5: "Thursday",
+      6: "Friday",
+      7: "Saturday",
+    };
+
+    const mostBookedDayOfWeek = {
+      day: dayOfWeekMap[reservations[0].getDataValue("dayOfWeek")],
+      booking_count: reservations[0].getDataValue("booking_count"),
+    };
+
+    res.status(200).json(mostBookedDayOfWeek);
+  } catch (error) {
+    console.error("Error fetching most booked day of the week:", error);
+    res
+      .status(500)
+      .json({ message: "Failed to fetch most booked day of the week." });
+  }
+}
+// get current club revenue for the current month
+async function getCurrentMonthReservationsRevenue(req, res) {
+  const { clubId } = req.params;
+
+  try {
+    const currentMonthStart = new Date();
+    currentMonthStart.setDate(1);
+    currentMonthStart.setHours(0, 0, 0, 0);
+
+    const currentMonthEnd = new Date();
+    currentMonthEnd.setMonth(currentMonthEnd.getMonth() + 1);
+    currentMonthEnd.setDate(1);
+    currentMonthEnd.setHours(0, 0, 0, 0);
+
+    const reservations = await Reservation.findAll({
+      include: [
+        {
+          model: Duration,
+          include: [
+            {
+              model: Field,
+              where: { club_id: clubId },
+              attributes: ["price"],
+            },
+          ],
+          attributes: [],
+        },
+      ],
+      attributes: ["id"], // Just to have some attribute from Reservation
+      where: {
+        date: {
+          [Sequelize.Op.between]: [currentMonthStart, currentMonthEnd],
+        },
+        status: "completed",
+      },
+      raw: true,
+    });
+
+    const totalRevenue = reservations.reduce((sum, reservation) => {
+      const price = new Decimal(reservation["duration.field.price"]);
+      return sum.plus(price);
+    }, new Decimal(0));
+
+    res.status(200).json({ total_revenue: totalRevenue.toFixed(2) });
+  } catch (error) {
+    console.error("Error fetching current month reservations revenue:", error);
+    res
+      .status(500)
+      .json({ message: "Failed to fetch current month reservations revenue." });
+  }
+}
+// get current club tournaments revenue for this month
+async function getCurrentMonthTournamentsRevenue(req, res) {
+  const { clubId } = req.params;
+
+  try {
+    const currentMonthStart = new Date();
+    currentMonthStart.setDate(1);
+    currentMonthStart.setHours(0, 0, 0, 0);
+
+    const currentMonthEnd = new Date();
+    currentMonthEnd.setMonth(currentMonthEnd.getMonth() + 1);
+    currentMonthEnd.setDate(1);
+    currentMonthEnd.setHours(0, 0, 0, 0);
+
+    const tournaments = await Tournament.findAll({
+      where: {
+        club_id: clubId,
+        status: "completed", // Only consider completed tournaments
+        end_date: {
+          // Assuming end_date is when the tournament was completed
+          [Sequelize.Op.between]: [currentMonthStart, currentMonthEnd],
+        },
+      },
+      attributes: ["entry_fees"],
+      raw: true,
+    });
+
+    const totalRevenue = tournaments.reduce((sum, tournament) => {
+      return sum.plus(new Decimal(tournament.entry_fees));
+    }, new Decimal(0));
+
+    res.status(200).json({ total_revenue: totalRevenue.toFixed(2) });
+  } catch (error) {
+    console.error("Error fetching current month tournaments revenue:", error);
+    res
+      .status(500)
+      .json({ message: "Failed to fetch current month tournaments revenue." });
+  }
+}
+// get current club total revenue for this month only
+// get current club total revenue
 module.exports = {
   createClub,
   updateClub,
@@ -406,4 +673,9 @@ module.exports = {
   getRefundPolicy,
   deleteRefundPolicy,
   isClubProfile,
+  getMostBookedField,
+  getMostBookedDuration,
+  getMostBookedDay,
+  getCurrentMonthReservationsRevenue,
+  getCurrentMonthTournamentsRevenue,
 };
