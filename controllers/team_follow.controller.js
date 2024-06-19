@@ -42,7 +42,12 @@ const followTeam = async (req, res) => {
 const unfollowTeam = async (req, res) => {
   try {
     const { playerId, teamId } = req.body;
-
+    if (!teamId) {
+      return res.status(404).json({ message: "Team id is required" });
+    }
+    if (!playerId) {
+      return res.status(404).json({ message: "Player id is required" });
+    }
     // Find and delete the club follow entry
     const follow = await TeamFollow.findOne({
       where: { player_id: playerId, team_id: teamId },
