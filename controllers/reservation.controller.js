@@ -9,6 +9,8 @@ const Transaction = db.transaction;
 const Player = db.player;
 const Club = db.club;
 const RefundPolicy = db.refund_policy;
+const Post = db.post;
+const Request = db.request;
 const { addDays, isBefore, parseISO, differenceInDays } = require("date-fns");
 
 const getAllReservations = async (req, res) => {
@@ -144,11 +146,9 @@ const getReservationsByDate = async (req, res) => {
 };
 
 // refund code
-// TODO: if funds transferring fails then set the transaction as failed => used db transactions instead
-// TODO: test all possible refund amounts
+// TODO: Find related posts and delete them if found after the refund is processed
 const processRefund = async (req, res) => {
   const userId = req.user.id;
-  console.log(req.user);
   const { reservationId } = req.params;
   const transaction = await db.sequelize.transaction(); // starting a new transaction
   try {
@@ -196,13 +196,13 @@ const processRefund = async (req, res) => {
       transaction: transaction,
     });
     if (!duration) {
-      return res.status(404).json({ message: "Duration not found." });
+      throw new Error("Duration not found.");
     }
     const field = await Field.findByPk(duration.field_id, {
       transaction: transaction,
     });
     if (!field) {
-      return res.status(404).json({ message: "Field not found." });
+      throw new Error("Field not found.");
     }
     const price = field.price;
     const priceDecimal = new Decimal(price);
@@ -238,9 +238,7 @@ const processRefund = async (req, res) => {
     });
 
     if (!playerWallet || !clubWallet) {
-      return res
-        .status(400)
-        .json({ message: "Player or club wallet not found." });
+      throw new Error("Player or club wallet not found.");
     }
 
     // Add refunded amount to player balance and deduct from club frozen balance
@@ -277,7 +275,33 @@ const processRefund = async (req, res) => {
       },
       { transaction: transaction }
     );
+    if (reservation.type === "team") {
+      // Find any related posts and delete them
+      const posts = await Post.findAll({
+        where: { reservation_id: reservation.id },
+        transaction: transaction,
+      });
 
+      await Promise.all(
+        posts.map(async (post) => {
+          // Find requests related to the post
+          const requests = await Request.findAll({
+            where: { post_id: post.id },
+            transaction: transaction,
+          });
+
+          // Delete the requests related to the post
+          await Promise.all(
+            requests.map(async (request) => {
+              await request.destroy({ transaction: transaction });
+            })
+          );
+
+          // Delete the post
+          await post.destroy({ transaction: transaction });
+        })
+      );
+    }
     // Change reservation status to canceled and set is_refunded to true
     reservation.status = "canceled";
     reservation.is_refunded = true;
