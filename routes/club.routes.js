@@ -85,9 +85,13 @@ module.exports = (app) => {
     club.getCurrentMonthTournamentsRevenue
   );
   // get current club total revenue for this month only
-  router.get("/top-day/:clubId", verifyToken, club.getMostBookedDay);
+  router.get(
+    "/total-revenue/:clubId",
+    verifyToken,
+    club.getCurrentMonthTotalRevenue
+  );
   // get current club total revenue
-  router.get("/top-day/:clubId", verifyToken, club.getMostBookedDay);
+  router.get("/all-total-revenue/:clubId", verifyToken, club.getTotalRevenue);
 
   app.use("/api/club", router);
 };

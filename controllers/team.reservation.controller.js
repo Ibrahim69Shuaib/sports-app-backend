@@ -22,7 +22,6 @@ const isFieldAvailable = async (durationId, date) => {
   });
   return !reservation;
 };
-// Function to check if user is a team captain TODO: needs testing
 const isUserTeamCaptain = async (userId) => {
   const player = await Player.findOne({
     where: { user_id: userId },
@@ -141,7 +140,7 @@ async function createTeamReservation(req, res) {
           },
           { transaction: t }
         );
-        throw new Error("Funds transfer failed.");
+        throw new Error("Insufficient funds ,Funds transfer failed.");
       }
 
       const reservation = await Reservation.create(

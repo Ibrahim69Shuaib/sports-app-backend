@@ -157,7 +157,7 @@ async function createPlayerReservation(req, res) {
           },
           { transaction: t }
         );
-        throw new Error("Funds transfer failed.");
+        throw new Error("Insufficient funds ,Funds transfer failed.");
       }
 
       // Create the reservation

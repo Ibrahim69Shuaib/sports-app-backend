@@ -657,7 +657,148 @@ async function getCurrentMonthTournamentsRevenue(req, res) {
   }
 }
 // get current club total revenue for this month only
+async function getCurrentMonthTotalRevenue(req, res) {
+  const { clubId } = req.params;
+
+  try {
+    const currentMonthStart = new Date();
+    currentMonthStart.setDate(1);
+    currentMonthStart.setHours(0, 0, 0, 0);
+
+    const currentMonthEnd = new Date();
+    currentMonthEnd.setMonth(currentMonthEnd.getMonth() + 1);
+    currentMonthEnd.setDate(1);
+    currentMonthEnd.setHours(0, 0, 0, 0);
+
+    // Calculate reservation revenue
+    const reservations = await Reservation.findAll({
+      include: [
+        {
+          model: Duration,
+          include: [
+            {
+              model: Field,
+              where: { club_id: clubId },
+              attributes: ["price"],
+            },
+          ],
+          attributes: [],
+        },
+      ],
+      attributes: ["id"], // Just to have some attribute from Reservation
+      where: {
+        date: {
+          [Sequelize.Op.between]: [currentMonthStart, currentMonthEnd],
+        },
+        status: "completed",
+      },
+      raw: true,
+    });
+    // Filter out reservations with null field price
+    const filteredReservations = reservations.filter(
+      (reservation) => reservation["duration.field.price"] !== null
+    );
+    const reservationRevenue = filteredReservations.reduce(
+      (sum, reservation) => {
+        const price = new Decimal(reservation["duration.field.price"]);
+        return sum.plus(price);
+      },
+      new Decimal(0)
+    );
+
+    // Calculate tournament revenue
+    const tournaments = await Tournament.findAll({
+      where: {
+        club_id: clubId,
+        status: "completed",
+        end_date: {
+          [Sequelize.Op.between]: [currentMonthStart, currentMonthEnd],
+        },
+      },
+      attributes: ["entry_fees"],
+      raw: true,
+    });
+
+    const tournamentRevenue = tournaments.reduce((sum, tournament) => {
+      return sum.plus(new Decimal(tournament.entry_fees));
+    }, new Decimal(0));
+
+    // Calculate total revenue
+    const totalRevenue = reservationRevenue.plus(tournamentRevenue);
+
+    res.status(200).json({ total_revenue: totalRevenue.toFixed(2) });
+  } catch (error) {
+    console.error("Error fetching current month total revenue:", error);
+    res
+      .status(500)
+      .json({ message: "Failed to fetch current month total revenue." });
+  }
+}
+
 // get current club total revenue
+async function getTotalRevenue(req, res) {
+  const { clubId } = req.params;
+
+  try {
+    // Calculate reservation revenue
+    const reservations = await Reservation.findAll({
+      include: [
+        {
+          model: Duration,
+          include: [
+            {
+              model: Field,
+              where: { club_id: clubId },
+              attributes: ["price"],
+            },
+          ],
+          attributes: [],
+        },
+      ],
+      attributes: ["id"], // Just to have some attribute from Reservation
+      where: {
+        status: "completed",
+      },
+      raw: true,
+    });
+
+    // Filter out reservations with null field price
+    const filteredReservations = reservations.filter(
+      (reservation) => reservation["duration.field.price"] !== null
+    );
+
+    const reservationRevenue = filteredReservations.reduce(
+      (sum, reservation) => {
+        const price = new Decimal(reservation["duration.field.price"]);
+        return sum.plus(price);
+      },
+      new Decimal(0)
+    );
+
+    // Calculate tournament revenue
+    const tournaments = await Tournament.findAll({
+      where: {
+        club_id: clubId,
+        status: "completed",
+      },
+      attributes: ["entry_fees"],
+      raw: true,
+    });
+
+    const tournamentRevenue = tournaments.reduce((sum, tournament) => {
+      return sum.plus(new Decimal(tournament.entry_fees));
+    }, new Decimal(0));
+
+    // Calculate total revenue
+    const totalRevenue = reservationRevenue.plus(tournamentRevenue);
+
+    res.status(200).json({ total_revenue: totalRevenue.toFixed(2) });
+  } catch (error) {
+    console.error("Error fetching total revenue:", error);
+    res.status(500).json({ message: "Failed to fetch total revenue." });
+  }
+}
+
 module.exports = {
   createClub,
   updateClub,
@@ -678,4 +819,6 @@ module.exports = {
   getMostBookedDay,
   getCurrentMonthReservationsRevenue,
   getCurrentMonthTournamentsRevenue,
+  getCurrentMonthTotalRevenue,
+  getTotalRevenue,
 };
