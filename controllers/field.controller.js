@@ -33,14 +33,16 @@ const createField = async (req, res) => {
     if (!club) {
       return res.status(404).json({ message: "Club not found" });
     }
-    const sport = await Sport.findOne({ where: { sport_id: sport_id } });
+    const sport = await Sport.findByPk(sport_id);
     if (!sport) {
       return res.status(404).json({ message: "Sport not found" });
     }
-    if (isBefore(parseISO(end_date), parseISO(start_date))) {
-      return res
-        .status(404)
-        .json({ message: "End date can't be before Start date." });
+    if (isUnderMaintenance == true) {
+      if (isBefore(parseISO(end_date), parseISO(start_date))) {
+        return res
+          .status(404)
+          .json({ message: "End date can't be before Start date." });
+      }
     }
     const field = await Field.create({
       size,
@@ -154,6 +156,7 @@ const putFieldUnderMaintenance = async (req, res) => {
     if (field.club_id !== club.id) {
       throw new Error("Unauthorized operation");
     }
+
     if (isBefore(parseISO(end_date), parseISO(start_date))) {
       return res
         .status(404)
