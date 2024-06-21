@@ -1,6 +1,6 @@
 module.exports = (sequelize, Sequelize) => {
   const TournamentTeam = sequelize.define(
-    "tournamentTeam",
+    "tournamentteam",
     {
       status: {
         type: Sequelize.ENUM("active", "eliminated"),

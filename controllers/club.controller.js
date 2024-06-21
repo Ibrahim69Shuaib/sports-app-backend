@@ -11,7 +11,7 @@ const Field = db.field;
 const Duration = db.duration;
 const Tournament = db.tournament;
 const Decimal = require("decimal.js");
-
+// create club profile
 const createClub = async (req, res) => {
   try {
     const {
@@ -419,14 +419,14 @@ async function getMostBookedField(req, res) {
         },
       ],
       attributes: [
-        [Sequelize.col("Duration.Field.id"), "fieldId"],
-        [Sequelize.col("Duration.Field.description"), "fieldDescription"],
+        [Sequelize.col("duration.field.id"), "fieldId"],
+        [Sequelize.col("duration.field.description"), "fieldDescription"],
         [
-          Sequelize.fn("COUNT", Sequelize.col("Duration.Field.id")),
+          Sequelize.fn("COUNT", Sequelize.col("duration.field.id")),
           "booking_count",
         ],
       ],
-      group: ["Duration.Field.id", "Duration.Field.description"],
+      group: ["duration.field.id", "duration.field.description"],
       order: [[Sequelize.literal("booking_count"), "DESC"]],
       limit: 1,
     });
@@ -470,12 +470,12 @@ async function getMostBookedDuration(req, res) {
         },
       ],
       attributes: [
-        [Sequelize.col("Duration.id"), "durationId"],
-        [Sequelize.col("Duration.time"), "time"],
+        [Sequelize.col("duration.id"), "durationId"],
+        [Sequelize.col("duration.time"), "time"],
 
-        [Sequelize.fn("COUNT", Sequelize.col("Duration.id")), "booking_count"],
+        [Sequelize.fn("COUNT", Sequelize.col("duration.id")), "booking_count"],
       ],
-      group: ["Duration.id", "Duration.time"],
+      group: ["duration.id", "duration.time"],
       order: [[Sequelize.literal("booking_count"), "DESC"]],
       limit: 1,
     });
@@ -524,11 +524,11 @@ async function getMostBookedDay(req, res) {
       ],
       attributes: [
         [
-          Sequelize.fn("DAYOFWEEK", Sequelize.col("Reservation.date")),
+          Sequelize.fn("DAYOFWEEK", Sequelize.col("reservation.date")),
           "dayOfWeek",
         ],
         [
-          Sequelize.fn("COUNT", Sequelize.col("Reservation.id")),
+          Sequelize.fn("COUNT", Sequelize.col("reservation.id")),
           "booking_count",
         ],
       ],
