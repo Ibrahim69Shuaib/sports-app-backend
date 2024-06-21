@@ -192,30 +192,21 @@ const getPostById = async (req, res) => {
 const getRecommendedPosts = async (req, res) => {
   const userId = req.user.id;
   try {
-    // Fetch player and their followed clubs and teams
-    const player = await Player.findOne(
-      { where: { user_id: userId } },
-      {
-        include: [
-          {
-            model: ClubFollow,
-            include: [{ model: Club }],
-          },
-          {
-            model: TeamFollow,
-            include: [{ model: Team }],
-          },
-        ],
-      }
-    );
+    // Fetch player and their followed teams
+    const player = await Player.findOne({
+      where: { user_id: userId },
+      include: [
+        {
+          model: TeamFollow,
+          include: [{ model: Team }],
+        },
+      ],
+    });
 
     if (!player) {
       return res.status(404).send({ message: "Player not found." });
     }
 
-    const followedClubIds = player.follow_clubs
-      ? player.follow_clubs.map((follow) => follow.club_id)
-      : [];
     const followedTeamIds = player.team_follows
       ? player.team_follows.map((follow) => follow.team_id)
       : [];
@@ -223,32 +214,11 @@ const getRecommendedPosts = async (req, res) => {
     const uniquePosts = new Map();
     const addedPostIds = new Set();
 
-    // Fetch reservations linked to the followed clubs
-    if (followedClubIds.length > 0) {
-      const reservations = await Reservation.findAll({
-        include: [
-          {
-            model: Duration,
-            include: [
-              {
-                model: Field,
-                where: { club_id: followedClubIds },
-                include: [{ model: Club }, { model: Sport }],
-              },
-            ],
-          },
-        ],
-      });
-
-      const reservationIds = reservations.map((reservation) => reservation.id);
-
-      // Fetch posts linked to the fetched reservations or followed teams
-      const clubTeamPosts = await Post.findAll({
+    // Fetch posts linked to the followed teams
+    if (followedTeamIds.length > 0) {
+      const teamPosts = await Post.findAll({
         where: {
-          [db.Sequelize.Op.or]: [
-            { reservation_id: reservationIds },
-            { player_id: followedTeamIds },
-          ],
+          player_id: followedTeamIds,
           status: "open",
         },
         include: [
@@ -275,55 +245,13 @@ const getRecommendedPosts = async (req, res) => {
         ],
       });
 
-      clubTeamPosts.forEach((post) => {
+      teamPosts.forEach((post) => {
         if (!addedPostIds.has(post.id)) {
           uniquePosts.set(post.id, post);
           addedPostIds.add(post.id);
         }
       });
     }
-
-    const playerLocation = player.location;
-
-    // Fetch posts related to the player's location
-    const locationPosts = await Post.findAll({
-      where: { status: "open" },
-      include: [
-        {
-          model: Reservation,
-          as: "reservation",
-          include: [
-            {
-              model: Duration,
-              include: [
-                {
-                  model: Field,
-                  include: [
-                    { model: Club, where: { location: playerLocation } },
-                    { model: Sport },
-                  ],
-                },
-              ],
-            },
-          ],
-        },
-        {
-          model: Player,
-          as: "player",
-          attributes: ["id", "name", "location", "pic"],
-        },
-      ],
-    });
-
-    locationPosts.forEach((post) => {
-      if (!addedPostIds.has(post.id)) {
-        uniquePosts.set(post.id, post);
-        addedPostIds.add(post.id);
-      }
-    });
-
-    // Convert the values of the unique posts map into an array (these are the recommended posts)
-    const recommendedPosts = Array.from(uniquePosts.values());
 
     // Fetch all other open posts
     const allOpenPosts = await Post.findAll({
@@ -334,10 +262,25 @@ const getRecommendedPosts = async (req, res) => {
           as: "player",
           attributes: ["id", "name", "location", "pic"],
         },
-        { model: Reservation, as: "reservation" },
+        {
+          model: Reservation,
+          as: "reservation",
+          include: [
+            {
+              model: Duration,
+              include: [
+                {
+                  model: Field,
+                  include: [{ model: Club }, { model: Sport }],
+                },
+              ],
+            },
+          ],
+        },
       ],
     });
 
+    // Add all other open posts to the unique posts if they are not already added
     allOpenPosts.forEach((post) => {
       if (!addedPostIds.has(post.id)) {
         uniquePosts.set(post.id, post);
@@ -345,10 +288,33 @@ const getRecommendedPosts = async (req, res) => {
       }
     });
 
-    // Convert the values of the unique posts map into an array again (combined posts)
+    // Convert the values of the unique posts map into an array (combined posts)
     const combinedPosts = Array.from(uniquePosts.values());
 
-    res.status(200).json(combinedPosts);
+    // Transform the combined posts into the desired format
+    const responsePosts = combinedPosts.map((post) => {
+      const reservation = post.reservation;
+      const duration = reservation ? reservation.duration : null;
+      const field = duration ? duration.field : null;
+      const club = field ? field.club : null;
+      const sport = field ? field.sport : null;
+
+      return {
+        id: post.id,
+        profilePhoto: post.player ? post.player.pic : null,
+        name: post.player ? post.player.name : null,
+        time: duration ? duration.start_time : null,
+        date: reservation ? reservation.date : null,
+        club: club ? club.name : null,
+        text: post.content,
+        level: field ? field.level : null, // Assuming level is in Field model
+        sport: sport ? sport.name : null,
+        type: post.type,
+        postedAt: post.postedAt,
+      };
+    });
+
+    res.status(200).json(responsePosts);
   } catch (error) {
     console.error("Error fetching recommended posts:", error);
     res
