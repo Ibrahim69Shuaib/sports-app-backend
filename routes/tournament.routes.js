@@ -3,7 +3,7 @@ module.exports = (app) => {
   var router = require("express").Router();
   const { verifyToken } = require("../middleware/auth.middleware.js");
   const checkRolesMiddleware = require("../middleware/check_roles.middleware.js");
-
+  const cacheMiddleware = require("../middleware/redis.middleware.js");
   // Create new tournament
   router.post(
     "/create",
@@ -53,11 +53,16 @@ module.exports = (app) => {
     tournament.getTournamentDetails
   );
   // get team details (with tournaments participated)
-  // router.get("/teams/:teamId", verifyToken, tournament.getTeamDetails);
+  router.get("/teams/:teamId", verifyToken, tournament.getTeamDetails);
   // get match details
   router.get("/matches/:matchId", verifyToken, tournament.getMatchDetails);
   // get all tournaments
-  router.get("/all", verifyToken, tournament.getAllTournaments);
+  router.get(
+    "/all",
+    verifyToken,
+    // cacheMiddleware,
+    tournament.getAllTournaments
+  );
   // get all tournaments hosted by a club
   router.get(
     "/hosted/:clubId",
@@ -69,6 +74,19 @@ module.exports = (app) => {
     "/participated",
     verifyToken,
     tournament.getParticipatedTournaments
+  );
+  // is eliminated
+  router.get(
+    "/isEliminated/:tournamentId",
+    verifyToken,
+    checkRolesMiddleware([1]),
+    tournament.isEliminated
+  );
+  // is eliminated
+  router.get(
+    "/belal-request/:tournamentId",
+    verifyToken,
+    tournament.getTournamentDetailsV2
   );
 
   app.use("/api/tournament", router);
