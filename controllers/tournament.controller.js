@@ -587,21 +587,21 @@ async function getTournamentDetails(req, res) {
   }
 }
 // // Get Team Details (with tournament)
-// async function getTeamDetails(req, res) {
-//   const { teamId } = req.params;
-//   try {
-//     const team = await Team.findByPk(teamId, {
-//       include: [{ model: TournamentTeam, include: [Tournament] }],
-//     });
-//     if (!team) {
-//       return res.status(404).json({ message: "Team not found" });
-//     }
-//     res.status(200).json(team);
-//   } catch (error) {
-//     console.error("Error fetching team details:", error);
-//     res.status(500).json({ message: "Failed to fetch team details." });
-//   }
-// }
+async function getTeamDetails(req, res) {
+  const { teamId } = req.params;
+  try {
+    const team = await Team.findByPk(teamId, {
+      include: [{ model: TournamentTeam, include: [Tournament] }],
+    });
+    if (!team) {
+      return res.status(404).json({ message: "Team not found" });
+    }
+    res.status(200).json(team);
+  } catch (error) {
+    console.error("Error fetching team details:", error);
+    res.status(500).json({ message: "Failed to fetch team details." });
+  }
+}
 // Get Match Details
 async function getMatchDetails(req, res) {
   const { matchId } = req.params;
@@ -695,6 +695,136 @@ async function getParticipatedTournaments(req, res) {
     });
   }
 }
+// // Get Team Details (with tournament)
+async function isEliminated(req, res) {
+  const { tournamentId } = req.params;
+  const userId = req.user.id;
+  try {
+    const player = await Player.findOne({ where: { user_id: userId } });
+    if (!player) {
+      res.status(404).json({ message: "Player not found" });
+    }
+    const team = await Team.findByPk(player.team_id);
+    if (!team) {
+      return res.status(404).json({ message: "Team not found" });
+    }
+    const eliminated = await TournamentTeam.findOne({
+      where: {
+        tournament_id: tournamentId,
+        team_id: team.id,
+        status: "eliminated",
+      },
+    });
+    if (eliminated) {
+      res.status(200).json({ isEliminated: true });
+    } else {
+      res.status(200).json({ isEliminated: false });
+    }
+  } catch (error) {
+    console.error("Error fetching team details:", error);
+    res.status(500).json({ message: "Failed to fetch team details." });
+  }
+}
+// Get Tournament Details
+async function getTournamentDetailsV2(req, res) {
+  const { tournamentId } = req.params;
+  try {
+    const tournament = await Tournament.findByPk(tournamentId, {
+      include: [
+        {
+          model: Match,
+          attributes: [
+            "id",
+            "date",
+            "winner_team_id",
+            "first_team_id",
+            "second_team_id",
+            "status",
+            "round",
+          ],
+          include: [
+            { model: Team, as: "FirstTeam", attributes: ["id", "name"] },
+            { model: Team, as: "SecondTeam", attributes: ["id", "name"] },
+          ],
+        },
+        {
+          model: TournamentTeam,
+          attributes: ["id", "status", "team_id"],
+          include: [{ model: Team, attributes: ["id", "name"] }],
+        },
+      ],
+    });
+
+    if (!tournament) {
+      return res.status(404).json({ message: "Tournament not found" });
+    }
+
+    // Ensure matches and tournamentTeams are defined
+    const matches = tournament.matches || [];
+    const tournamentTeams = tournament.tournamentTeams || [];
+
+    // Filter out NULL winner_team_id
+    const winnerTeamIds = matches
+      .map((match) => match.winner_team_id)
+      .filter((id) => id !== null);
+
+    // Include the tournament winner_team_id if it is not null
+    if (tournament.winner_team_id) {
+      winnerTeamIds.push(tournament.winner_team_id);
+    }
+
+    const winnerTeams = await Team.findAll({
+      where: {
+        id: winnerTeamIds,
+      },
+      attributes: ["id", "name"],
+    });
+
+    const winnerTeamsMap = winnerTeams.reduce((acc, team) => {
+      acc[team.id] = team.name;
+      return acc;
+    }, {});
+
+    // Extract necessary details for response
+    const formattedMatches = matches.map((match) => ({
+      id: match.id,
+      date: match.date,
+      status: match.status,
+      round: match.round,
+      winnerTeam: match.winner_team_id
+        ? winnerTeamsMap[match.winner_team_id]
+        : null,
+      firstTeam: match.FirstTeam ? match.FirstTeam.name : null,
+      secondTeam: match.SecondTeam ? match.SecondTeam.name : null,
+    }));
+
+    const formattedTeams = tournamentTeams.map((tournamentTeam) => ({
+      id: tournamentTeam.team.id,
+      name: tournamentTeam.team.name,
+      status: tournamentTeam.status,
+    }));
+
+    res.status(200).json({
+      id: tournament.id,
+      name: tournament.name,
+      start_date: tournament.start_date,
+      end_date: tournament.end_date,
+      max_teams: tournament.max_teams,
+      entry_fees: tournament.entry_fees,
+      status: tournament.status,
+      winner_team_id: tournament.winner_team_id,
+      winner_team_name: tournament.winner_team_id
+        ? winnerTeamsMap[tournament.winner_team_id]
+        : null,
+      matches: formattedMatches,
+      teams: formattedTeams,
+    });
+  } catch (error) {
+    console.error("Error fetching tournament details:", error);
+    res.status(500).json({ message: "Failed to fetch tournament details." });
+  }
+}
+
 module.exports = {
   createTournament,
   joinTournament,
@@ -702,10 +832,12 @@ module.exports = {
   updateMatchSchedule,
   forfeitTournament,
   getTournamentDetails,
-  // getTeamDetails,
+  getTeamDetails,
   getMatchDetails,
   getAllTournaments,
   getAllTournamentsHostedByClub,
   getParticipatedTournaments,
   cancelTournament,
+  isEliminated,
+  getTournamentDetailsV2,
 };
