@@ -225,7 +225,13 @@ const getRecommendedPosts = async (req, res) => {
           {
             model: Player,
             as: "player",
-            attributes: ["id", "name", "location", "pic"],
+            attributes: ["id", "name", "location", "pic", "team_id"],
+            include: [
+              {
+                model: Team,
+                attributes: ["id", "level"],
+              },
+            ],
           },
           {
             model: Reservation,
@@ -260,7 +266,13 @@ const getRecommendedPosts = async (req, res) => {
         {
           model: Player,
           as: "player",
-          attributes: ["id", "name", "location", "pic"],
+          attributes: ["id", "name", "location", "pic", "team_id"],
+          include: [
+            {
+              model: Team,
+              attributes: ["id", "level"],
+            },
+          ],
         },
         {
           model: Reservation,
@@ -298,19 +310,20 @@ const getRecommendedPosts = async (req, res) => {
       const field = duration ? duration.field : null;
       const club = field ? field.club : null;
       const sport = field ? field.sport : null;
+      const playerTeam = post.player ? post.player.team : null;
 
       return {
         id: post.id,
         profilePhoto: post.player ? post.player.pic : null,
         name: post.player ? post.player.name : null,
-        time: duration ? duration.start_time : null,
+        time: duration ? duration.time : null,
         date: reservation ? reservation.date : null,
         club: club ? club.name : null,
         text: post.content,
-        level: field ? field.level : null, // Assuming level is in Field model
+        level: playerTeam ? playerTeam.level : null, // Fetch level from player's team
         sport: sport ? sport.name : null,
         type: post.type,
-        postedAt: post.postedAt,
+        postedAt: post.createdAt,
       };
     });
 
