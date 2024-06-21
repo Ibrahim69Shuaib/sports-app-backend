@@ -68,6 +68,7 @@ require("./routes/posts.routes")(app); // Posts
 require("./routes/plan.routes")(app); // Plans
 require("./routes/subscription.routes")(app); // Subscriptions
 require("./routes/tournament.routes")(app); // Tournaments
+require("./routes/ads.routes")(app); // Ads
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

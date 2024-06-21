@@ -10,6 +10,7 @@ const TeamFollow = db.team_follow;
 const Duration = db.duration;
 const Field = db.field;
 const User = db.user;
+const Sport = db.sport;
 // Function to create a new post
 const createPost = async (req, res) => {
   const { playerId, reservationId, type, content } = req.body;
@@ -232,7 +233,7 @@ const getRecommendedPosts = async (req, res) => {
               {
                 model: Field,
                 where: { club_id: followedClubIds },
-                include: [{ model: Club }],
+                include: [{ model: Club }, { model: Sport }],
               },
             ],
           },
@@ -254,7 +255,7 @@ const getRecommendedPosts = async (req, res) => {
           {
             model: Player,
             as: "player",
-            attributes: ["id", "name", "location"],
+            attributes: ["id", "name", "location", "pic"],
           },
           {
             model: Reservation,
@@ -265,7 +266,7 @@ const getRecommendedPosts = async (req, res) => {
                 include: [
                   {
                     model: Field,
-                    include: [{ model: Club }],
+                    include: [{ model: Club }, { model: Sport }],
                   },
                 ],
               },
@@ -299,13 +300,18 @@ const getRecommendedPosts = async (req, res) => {
                   model: Field,
                   include: [
                     { model: Club, where: { location: playerLocation } },
+                    { model: Sport },
                   ],
                 },
               ],
             },
           ],
         },
-        { model: Player, as: "player", attributes: ["id", "name", "location"] },
+        {
+          model: Player,
+          as: "player",
+          attributes: ["id", "name", "location", "pic"],
+        },
       ],
     });
 
@@ -323,7 +329,11 @@ const getRecommendedPosts = async (req, res) => {
     const allOpenPosts = await Post.findAll({
       where: { status: "open" },
       include: [
-        { model: Player, as: "player", attributes: ["id", "name", "location"] },
+        {
+          model: Player,
+          as: "player",
+          attributes: ["id", "name", "location", "pic"],
+        },
         { model: Reservation, as: "reservation" },
       ],
     });
