@@ -24,6 +24,7 @@
     "mysql2": "^3.9.2",
     "node-cron": "^3.0.3",
     "nodemailer": "^6.9.11",
+    "redis": "^4.6.14",
     "sequelize": "^6.37.1",
     "stripe": "^15.1.0",
     "validator": "^13.11.0"

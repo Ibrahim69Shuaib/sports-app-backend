@@ -3,6 +3,7 @@ module.exports = (app) => {
   var router = require("express").Router();
   const { verifyToken } = require("../middleware/auth.middleware.js");
   const checkRolesMiddleware = require("../middleware/check_roles.middleware.js");
+  const cacheMiddleware = require("../middleware/redis.middleware.js");
 
   // Get current player details
   router.get(
@@ -32,7 +33,7 @@ module.exports = (app) => {
     player.updatePlayer
   );
   // Get all players
-  router.get("/all", verifyToken, player.getAllPlayers); // needs some roles but idk what
+  router.get("/all", verifyToken, cacheMiddleware, player.getAllPlayers); // needs some roles but idk what
   // Get all player wit pagination
   router.get("/list", verifyToken, player.getAllPlayersWithPagination);
   // Get players by sport

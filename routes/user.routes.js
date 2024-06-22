@@ -3,6 +3,7 @@ module.exports = (app) => {
   var router = require("express").Router();
   const { verifyToken } = require("../middleware/auth.middleware");
   const checkRolesMiddleware = require("../middleware/check_roles.middleware.js");
+  const cacheMiddleware = require("../middleware/redis.middleware.js");
 
   // edit user details - access by any role
   router.patch("/edit/:id", verifyToken, user.editUserDetails);
@@ -16,7 +17,13 @@ module.exports = (app) => {
     user.changeUserRole
   );
   // get all users - access by admin
-  router.get("/all", verifyToken, checkRolesMiddleware([3]), user.getAllUsers);
+  router.get(
+    "/all",
+    verifyToken,
+    checkRolesMiddleware([3]),
+    cacheMiddleware,
+    user.getAllUsers
+  );
   // get user details by id  - access by any role
   router.get("/details-id/:id", verifyToken, user.getUserDetailsById);
   // get user details by name - access by any role
