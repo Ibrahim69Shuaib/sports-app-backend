@@ -58,4 +58,46 @@ async function getPlanById(req, res) {
     res.status(500).json({ message: "Error retrieving plans", error });
   }
 }
-module.exports = { createPlan, getPlans, getPlanById };
+// delete plan by its id
+async function deletePlanById(req, res) {
+  const { planId } = req.params;
+  try {
+    const plan = await Plan.findByPk(planId);
+    if (!plan) {
+      return res.status(404).json({ message: "Plan not found" });
+    }
+    await plan.destroy();
+    res.status(200).json({ message: "Plan deleted successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" + error });
+  }
+}
+// edit plan by its id
+async function editPlanById(req, res) {
+  try {
+    const { planId } = req.params;
+    const { name, price, duration } = req.body;
+    const plan = await Plan.findByPk(planId);
+    if (!plan) {
+      return res.status(404).json({ message: "Plan not found" });
+    }
+    //update plan
+    plan.name = name;
+    plan.price = price;
+    plan.duration = duration;
+    await plan.save();
+
+    res.status(200).json(plan);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" + error });
+  }
+}
+module.exports = {
+  createPlan,
+  getPlans,
+  getPlanById,
+  deletePlanById,
+  editPlanById,
+};

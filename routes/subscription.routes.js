@@ -44,6 +44,12 @@ module.exports = (app) => {
     checkRolesMiddleware([2]),
     subscription.activeSubscription
   );
-
+  // Get my subscription and plan
+  router.get(
+    "/admin-all",
+    verifyToken,
+    checkRolesMiddleware([3]),
+    subscription.getAllSubscriptionsFoAdmin
+  );
   app.use("/api/subscription", router);
 };

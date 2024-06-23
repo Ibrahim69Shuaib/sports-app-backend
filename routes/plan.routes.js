@@ -5,6 +5,20 @@ module.exports = (app) => {
   const checkRolesMiddleware = require("../middleware/check_roles.middleware.js");
   // Create new plan (by system admin)
   router.post("/add", verifyToken, checkRolesMiddleware([3]), plan.createPlan);
+  // Create new plan (by system admin)
+  router.delete(
+    "/delete/:planId",
+    verifyToken,
+    checkRolesMiddleware([3]),
+    plan.deletePlanById
+  );
+  // Create new plan (by system admin)
+  router.put(
+    "/update/:planId",
+    verifyToken,
+    checkRolesMiddleware([3]),
+    plan.editPlanById
+  );
   // Get all plans
   router.get("/all", plan.getPlans);
   // Get plan by id

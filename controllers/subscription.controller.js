@@ -253,6 +253,19 @@ const activeSubscription = async (req, res) => {
     }
   } catch (error) {}
 };
+// Get All Subscriptions
+async function getAllSubscriptionsFoAdmin(req, res) {
+  try {
+    const subscriptions = await Subscription.findAll({
+      include: [Plan, Club],
+    });
+
+    res.status(200).json(subscriptions);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error fetching subscriptions" });
+  }
+}
 module.exports = {
   subscribeToPlan,
   cancelSubscription,
@@ -260,4 +273,5 @@ module.exports = {
   getAllSubscriptions,
   getCurrentActiveSubscription,
   activeSubscription,
+  getAllSubscriptionsFoAdmin,
 };
