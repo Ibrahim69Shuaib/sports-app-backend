@@ -5,7 +5,7 @@ module.exports = (sequelize, Sequelize) => {
       email_token: {
         type: Sequelize.STRING,
       },
-      device_token: {
+      notification_player_id: {
         type: Sequelize.STRING,
       },
       password_token: {

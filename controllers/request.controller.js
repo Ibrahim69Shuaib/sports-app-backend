@@ -6,6 +6,8 @@ const Post = db.post;
 const User = db.user;
 const player_lineup = db.player_lineup;
 const { Op, where } = require("sequelize");
+const { sendNotification } = require("../services/notificationService");
+const Token = db.token;
 //TODO: add a check for invitation functions to handle team size
 // Send a join request to a team
 const sendJoinRequest = async (req, res) => {
@@ -49,7 +51,18 @@ const sendJoinRequest = async (req, res) => {
       receiver_id: captain.user_id, // Send the request to the team captain
       team_id: teamId,
     });
-
+    // Fetch the OneSignal Player ID of the captain
+    const token = await Token.findOne({ where: { user_id: captain.user_id } });
+    if (token && token.notification_player_id) {
+      // Send notification via OneSignal
+      const OneSignalPlayerId = token.notification_player_id;
+      // Send notification to sender
+      await sendNotification(
+        "ba3bfab2-8053-4771-9a99-e4b138ad6ff1",
+        "Join Request",
+        `User ${userId} wants to join your team ${teamId}..`
+      );
+    }
     res
       .status(201)
       .json({ message: "Join request sent successfully", request });

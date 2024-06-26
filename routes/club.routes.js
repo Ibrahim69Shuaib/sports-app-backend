@@ -68,6 +68,8 @@ module.exports = (app) => {
   );
   // get current club most booked field
   router.get("/top-field/:clubId", verifyToken, club.getMostBookedField);
+  // get current club least booked field
+  router.get("/least-field/:clubId", verifyToken, club.getLeastBookedField);
   // get current club most booked time
   router.get("/top-time/:clubId", verifyToken, club.getMostBookedDuration);
   // get current club most booked day

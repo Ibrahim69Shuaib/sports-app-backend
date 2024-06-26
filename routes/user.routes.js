@@ -46,6 +46,8 @@ module.exports = (app) => {
   );
   // change current user password - access by any role
   router.post("/change-password", verifyToken, user.changePassword);
+  // change current user password - access by any role
+  router.post("/savePlayerId", verifyToken, user.savePlayerId);
   // access by admin role
   // list users with pagination  => it takes page and limit as query params
   router.get("/list", verifyToken, checkRolesMiddleware([3]), user.listUsers);

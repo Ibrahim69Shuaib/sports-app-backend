@@ -2,6 +2,7 @@ const db = require("../models");
 const User = db.user;
 const bcrypt = require("bcryptjs");
 const Sequelize = require("sequelize");
+const Token = db.token;
 // get all players even the soft deleted ones
 const editUserDetails = async (req, res) => {
   const userId = req.user.id;
@@ -97,6 +98,27 @@ const changeUserRole = async (req, res) => {
     res.status(500).json({ message: "Error changing user role" });
   }
 };
+const savePlayerId = async (req, res) => {
+  try {
+    const { playerId } = req.body;
+    const userId = req.user.id;
+
+    // Find or create a token entry for the user
+    const [token, created] = await Token.findOrCreate({
+      where: { user_id: userId },
+      defaults: { user_id: userId },
+    });
+
+    // Update the notification_player_id
+    await token.update({ notification_player_id: playerId });
+
+    res.status(200).json({ message: "Player ID saved successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 // add to auth middleware roles admin
 const getAllUsers = async (req, res) => {
   try {
@@ -223,6 +245,7 @@ module.exports = {
   getUserStatistics,
   changePassword,
   listUsers,
+  savePlayerId,
 };
 // might need get user role name
 // might need get current user name only

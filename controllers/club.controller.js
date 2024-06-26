@@ -447,6 +447,63 @@ async function getMostBookedField(req, res) {
     res.status(500).json({ message: "Failed to fetch most booked field." });
   }
 }
+// get current club least booked field
+const getLeastBookedField = async (req, res) => {
+  const { clubId } = req.params;
+
+  try {
+    // Fetch all fields for the given clubId
+    const fields = await db.field.findAll({
+      where: { club_id: clubId },
+    });
+
+    if (fields.length === 0) {
+      return res.status(404).json({ message: "No fields found for this club" });
+    }
+
+    // Initialize an array to store field booking counts
+    const fieldBookings = await Promise.all(
+      fields.map(async (field) => {
+        const reservationCount = await db.reservation.count({
+          include: [
+            {
+              model: db.duration,
+              where: { field_id: field.id },
+            },
+          ],
+        });
+        return { field, reservationCount };
+      })
+    );
+
+    if (
+      fieldBookings.every((fieldBooking) => fieldBooking.reservationCount === 0)
+    ) {
+      return res
+        .status(404)
+        .json({ message: "No reservations found for any fields in this club" });
+    }
+
+    // Find the field with the least reservations
+    const leastBookedField = fieldBookings.reduce((least, current) => {
+      return current.reservationCount < least.reservationCount
+        ? current
+        : least;
+    });
+
+    // Add bookingCount attribute
+    const leastBookedFieldWithCount = {
+      ...leastBookedField.field.dataValues,
+      bookingCount: leastBookedField.reservationCount,
+    };
+
+    // Return the least booked field with booking count
+    res.status(200).json(leastBookedFieldWithCount);
+  } catch (error) {
+    console.error("Error fetching least booked field:", error);
+    res.status(500).json({ message: "Failed to fetch least booked field" });
+  }
+};
 
 // get current club most booked duration (time)
 async function getMostBookedDuration(req, res) {
@@ -815,6 +872,7 @@ module.exports = {
   deleteRefundPolicy,
   isClubProfile,
   getMostBookedField,
+  getLeastBookedField,
   getMostBookedDuration,
   getMostBookedDay,
   getCurrentMonthReservationsRevenue,
