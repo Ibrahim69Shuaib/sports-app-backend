@@ -280,7 +280,7 @@ const getAllSentRequests = async (req, res) => {
     const userId = req.user.id;
 
     const sentRequests = await Request.findAll({
-      where: { sender_id: userId },
+      where: { sender_id: userId, status: "pending" },
       include: { model: Team, as: "team" },
     });
 
@@ -295,7 +295,7 @@ const getAllReceivedRequests = async (req, res) => {
     const userId = req.user.id;
 
     const receivedRequests = await Request.findAll({
-      where: { receiver_id: userId },
+      where: { receiver_id: userId, status: "pending" },
       include: { model: Team, as: "team" },
     });
 
