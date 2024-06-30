@@ -281,6 +281,7 @@ const getAllSentRequests = async (req, res) => {
 
     const sentRequests = await Request.findAll({
       where: { sender_id: userId },
+      include: { model: Team, as: "team" },
     });
 
     res.status(200).json(sentRequests);
@@ -295,6 +296,7 @@ const getAllReceivedRequests = async (req, res) => {
 
     const receivedRequests = await Request.findAll({
       where: { receiver_id: userId },
+      include: { model: Team, as: "team" },
     });
 
     res.status(200).json(receivedRequests);
@@ -310,6 +312,7 @@ const filterRequestsByType = async (req, res) => {
 
     const filteredRequests = await Request.findAll({
       where: { receiver_id: userId, type },
+      include: { model: Team, as: "team" },
     });
 
     res.status(200).json(filteredRequests);
@@ -537,6 +540,7 @@ const getRequestsByPost = async (req, res) => {
       include: [
         { model: User, as: "sender" },
         { model: User, as: "receiver" },
+        { model: Team, as: "team" },
       ],
     });
     res.status(200).json(requests);
