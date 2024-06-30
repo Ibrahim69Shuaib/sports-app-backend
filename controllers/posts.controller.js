@@ -335,7 +335,118 @@ const getRecommendedPosts = async (req, res) => {
       .send({ message: "Error fetching recommended posts", error });
   }
 };
+const getAllPosts = async (req, res) => {
+  try {
+    // Fetch all open posts with necessary associations
+    const allPosts = await Post.findAll({
+      where: { status: "open" },
+      include: [
+        {
+          model: Player,
+          as: "player",
+          attributes: ["id", "name", "location"],
+        },
+        {
+          model: Reservation,
+          as: "reservation",
+          include: [
+            {
+              model: Duration,
+              include: [
+                {
+                  model: Field,
+                  include: [{ model: Club }, { model: Sport }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
 
+    // Transform the posts into the desired format
+    const responsePosts = allPosts.map((post) => {
+      const reservation = post.reservation;
+      const duration = reservation ? reservation.duration : null;
+      const field = duration ? duration.field : null;
+      const club = field ? field.club : null;
+      const sport = field ? field.sport : null;
+
+      return {
+        id: post.id,
+        type: post.type,
+        content: post.content,
+        status: post.status,
+        createdAt: post.createdAt,
+        updatedAt: post.updatedAt,
+        player_id: post.player_id,
+        reservation_id: post.reservation_id,
+        player: post.player
+          ? {
+              id: post.player.id,
+              name: post.player.name,
+              location: post.player.location,
+            }
+          : null,
+        reservation: reservation
+          ? {
+              id: reservation.id,
+              type: reservation.type,
+              status: reservation.status,
+              date: reservation.date,
+              is_refunded: reservation.is_refunded,
+              createdAt: reservation.createdAt,
+              user_id: reservation.user_id,
+              duration_id: reservation.duration_id,
+              duration: duration
+                ? {
+                    id: duration.id,
+                    time: duration.time,
+                    field_id: duration.field_id,
+                    field: field
+                      ? {
+                          id: field.id,
+                          size: field.size,
+                          pic: field.pic,
+                          description: field.description,
+                          duration: field.duration,
+                          price: field.price,
+                          type: field.type,
+                          isUnderMaintenance: field.isUnderMaintenance,
+                          start_date: field.start_date,
+                          end_date: field.end_date,
+                          club_id: field.club_id,
+                          sport_id: field.sport_id,
+                          club: club
+                            ? {
+                                id: club.id,
+                                name: club.name,
+                                description: club.description,
+                                location: club.location,
+                                pic: club.pic,
+                                isBlocked: club.isBlocked,
+                                lat: club.lat,
+                                lon: club.lon,
+                                workingHoursStart: club.workingHoursStart,
+                                workingHoursEnd: club.workingHoursEnd,
+                                user_id: club.user_id,
+                              }
+                            : null,
+                        }
+                      : null,
+                  }
+                : null,
+            }
+          : null,
+      };
+    });
+
+    res.status(200).json(responsePosts);
+  } catch (error) {
+    console.error("Error fetching all posts:", error);
+    res.status(500).send({ message: "Error fetching all posts", error });
+  }
+};
 module.exports = {
   createPost,
   updatePost,
@@ -345,5 +456,6 @@ module.exports = {
   // getReservationsByPlayer,
   getPostById,
   getRecommendedPosts,
+  getAllPosts,
 };
 // define get requests to get posts with a specific format

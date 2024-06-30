@@ -13,6 +13,8 @@ module.exports = (app) => {
     checkRolesMiddleware([1]),
     posts.getRecommendedPosts
   );
+  // get all posts
+  router.get("/all", verifyToken, checkRolesMiddleware([1]), posts.getAllPosts);
   //update post content
   router.put(
     "/:postId",
